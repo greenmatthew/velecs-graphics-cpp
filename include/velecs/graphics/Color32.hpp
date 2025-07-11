@@ -29,6 +29,8 @@ public:
 
     // Public Fields
 
+    using Vec4 = velecs::math::Vec4;
+
     static const Color32 RED;
     static const Color32 GREEN;
     static const Color32 BLUE;
@@ -109,7 +111,7 @@ public:
     /// @brief Converts the Color32 object to a Vec4.
     /// @details Each color channel is normalized to the range [0, 1].
     /// @return glm::vec4 object with RGBA components normalized.
-    operator velecs::math::Vec4() const;
+    operator Vec4() const;
 
     /// @brief Converts the Color32 object to a glm::vec4.
     /// @details Each color channel is normalized to the range [0, 1].

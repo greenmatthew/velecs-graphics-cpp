@@ -108,9 +108,9 @@ Color32 Color32::FromHex(const std::string& hexCode)
     return Color32(r, g, b, a);
 }
 
-Color32::operator velecs::math::Vec4() const
+Color32::operator Vec4() const
 {
-    return velecs::math::Vec4
+    return Vec4
     {
         r/255.0f,
         g/255.0f,
@@ -121,7 +121,7 @@ Color32::operator velecs::math::Vec4() const
 
 Color32::operator glm::vec4() const
 {
-    return static_cast<glm::vec4>(static_cast<velecs::math::Vec4>(*this));
+    return static_cast<glm::vec4>(static_cast<Vec4>(*this));
 }
 
 uint8_t& Color32::operator[](const std::size_t index)
@@ -175,7 +175,7 @@ std::string Color32::ToStringFloat() const
 {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(4);
-    velecs::math::Vec4 color = static_cast<velecs::math::Vec4>(*this);
+    Vec4 color = static_cast<Vec4>(*this);
     oss << "RGBA(" << color.x << ", " << color.y << ", " 
         << color.z << ", " << color.w << ')';
     return oss.str();
