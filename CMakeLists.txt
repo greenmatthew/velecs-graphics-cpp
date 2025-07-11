@@ -31,7 +31,6 @@ add_subdirectory(libs)
 # Source files for the library
 set(LIB_SOURCES
    src/Color32.cpp
-   # Future Vulkan sources here
 )
 
 # Header files for the library (for IDE organization)  
@@ -40,8 +39,8 @@ set(LIB_HEADERS
 
    include/velecs/graphics/Graphics.hpp
 
+   include/velecs/graphics/Rect.hpp
    include/velecs/graphics/Color32.hpp
-   # Future Vulkan headers here
 )
 
 # Always build the library

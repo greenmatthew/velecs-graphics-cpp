@@ -10,4 +10,5 @@
 
 #pragma once
 
+#include "velecs/graphics/Rect.hpp"
 #include "velecs/graphics/Color32.hpp"

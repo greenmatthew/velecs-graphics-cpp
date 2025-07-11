@@ -199,4 +199,4 @@ private:
 
 std::ostream& operator<<(std::ostream& os, const Color32 color);
 
-} // namespace velecs
+} // namespace velecs::graphics
