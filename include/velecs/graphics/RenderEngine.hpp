@@ -59,8 +59,6 @@ private:
 
     SDL_Window* _window{nullptr}; /// @brief Pointer to the SDL window structure.
 
-    VkExtent2D windowExtent{1700, 900}; /// @brief Desired dimensions of the rendering window.
-
     VkInstance _instance{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan library.
     VkDebugUtilsMessengerEXT _debug_messenger{VK_NULL_HANDLE}; /// @brief Handle for Vulkan debug messaging.
     VkPhysicalDevice _chosenGPU{VK_NULL_HANDLE}; /// @brief The chosen GPU for rendering operations.
@@ -122,6 +120,8 @@ private:
     bool InitPipelines();
     
     void CleanupVulkan();
+
+    VkExtent2D GetWindowExtent() const;
 };
 
 } // namespace velecs::graphics

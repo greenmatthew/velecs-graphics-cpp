@@ -197,6 +197,7 @@ bool RenderEngine::InitSwapchain()
     
     vkb::Swapchain vkbSwapchain = vkbSwapchainRet.value();
 
+    VkExtent2D windowExtent = GetWindowExtent();
     vkbSwapchain.extent = windowExtent;
     //use vsync present mode
     vkbSwapchain.present_mode = VK_PRESENT_MODE_FIFO_KHR;
@@ -315,17 +316,17 @@ bool RenderEngine::InitRenderPass()
 
     VkAttachmentDescription color_attachment = {};
     
-    color_attachment.format = _swapchainImageFormat; // the attachment will have the format needed by the swapchain
+    color_attachment.format = _swapchainImageFormat; // The attachment will have the format needed by the swapchain
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 1 sample, we won't be doing MSAA 
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // we Clear when this attachment is loaded
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // we keep the attachment stored when the renderpass ends
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // we don't care about stencil
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // we don't care about stencil
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // we don't know nor care about the starting layout of the attachment
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // after the renderpass ends, the image has to be on a layout ready for display
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // We Clear when this attachment is loaded
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the renderpass ends
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // We don't care about stencil
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // We don't care about stencil
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know nor care about the starting layout of the attachment
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the renderpass ends, the image has to be on a layout ready for display
 
     VkAttachmentReference color_attachment_ref = {};
-    color_attachment_ref.attachment = 0; // attachment number will index into the pAttachments array in the parent renderpass itself
+    color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent renderpass itself
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
@@ -344,17 +345,17 @@ bool RenderEngine::InitRenderPass()
     depth_attachment_ref.attachment = 1;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    // array of 2 attachments, one for the color, and other for depth
+    // Array of 2 attachments, one for the color, and other for depth
     VkAttachmentDescription attachments[2] = { color_attachment, depth_attachment };
 
     // SUBPASS
 
-    // we are going to create 1 subpass, which is the minimum you can do
+    // We are going to create 1 subpass, which is the minimum you can do
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref; // hook the depth attachment into the subpass
+    subpass.pDepthStencilAttachment = &depth_attachment_ref; // Hook the depth attachment into the subpass
 
     // DEPENDENCIES
 
@@ -382,7 +383,7 @@ bool RenderEngine::InitRenderPass()
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = 2;
     render_pass_info.pAttachments = &attachments[0];
-    render_pass_info.subpassCount = 1; // connect the subpass to the info
+    render_pass_info.subpassCount = 1; // Connect the subpass to the info
     render_pass_info.pSubpasses = &subpass;
     render_pass_info.dependencyCount = 2;
     render_pass_info.pDependencies = &dependencies[0];
@@ -399,6 +400,40 @@ bool RenderEngine::InitRenderPass()
 
 bool RenderEngine::InitFramebuffers()
 {
+    // Create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
+    VkFramebufferCreateInfo fb_info = {};
+    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.pNext = nullptr;
+
+    fb_info.renderPass = _renderPass;
+    fb_info.attachmentCount = 1;
+    VkExtent2D windowExtent = GetWindowExtent();
+    fb_info.width = windowExtent.width;
+    fb_info.height = windowExtent.height;
+    fb_info.layers = 1;
+
+    // Grab how many images we have in the swapchain
+    const size_t swapchain_imagecount = _swapchainImages.size();
+    _framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+
+    // Create framebuffers for each of the swapchain image views
+    for (int i = 0; i < swapchain_imagecount; i++)
+    {
+        VkImageView attachments[2];
+        attachments[0] = _swapchainImageViews[i];
+        attachments[1] = _depthImageView;
+
+        fb_info.pAttachments = attachments;
+        fb_info.attachmentCount = 2;
+
+        VkResult result = vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create framebuffer " << i << ": " << result << std::endl;
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -415,6 +450,16 @@ bool RenderEngine::InitPipelines()
 void RenderEngine::CleanupVulkan()
 {
 
+}
+
+VkExtent2D RenderEngine::GetWindowExtent() const
+{
+    int width, height;
+    SDL_GetWindowSize(_window, &width, &height);
+    return VkExtent2D{
+        static_cast<uint32_t>(width), 
+        static_cast<uint32_t>(height)
+    };
 }
 
 } // namespace velecs::graphics
