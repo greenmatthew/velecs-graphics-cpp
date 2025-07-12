@@ -74,9 +74,11 @@ endif()
 set(LIB_SOURCES
    src/RenderEngine.cpp
 
-   src/VulkanInitializers.cpp
-
    src/Memory/DeletionQueue.cpp
+
+   src/VulkanInitializers.cpp
+   src/PipelineBuilder.cpp
+   src/VertexBufferParamsBuilder.cpp
 
    src/Color32.cpp
 )
@@ -86,12 +88,17 @@ set(LIB_HEADERS
    include/velecs/graphics/Common.hpp
 
    include/velecs/graphics/RenderEngine.hpp
-   include/velecs/graphics/VulkanInitializers.hpp
+   
 
    include/velecs/graphics/Memory/AllocatedBuffer.hpp
    include/velecs/graphics/Memory/AllocatedImage.hpp
    include/velecs/graphics/Memory/DeletionQueue.hpp
    include/velecs/graphics/Memory/UploadContext.hpp
+
+   include/velecs/graphics/VulkanInitializers.hpp
+   include/velecs/graphics/PipelineBuilder.hpp
+   include/velecs/graphics/VertexBufferParamsBuilder.hpp
+   include/velecs/graphics/Vertex.hpp
 
    include/velecs/graphics/Rect.hpp
    include/velecs/graphics/Color32.hpp
