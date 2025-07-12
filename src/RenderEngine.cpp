@@ -10,6 +10,8 @@
 
 #include "velecs/graphics/RenderEngine.hpp"
 
+#include "velecs/graphics/VulkanInitializers.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -168,6 +170,86 @@ bool RenderEngine::InitVulkan()
 
 bool RenderEngine::InitSwapchain()
 {
+    vkb::SwapchainBuilder swapchainBuilder = vkb::SwapchainBuilder{_chosenGPU, _device, _surface};
+
+    // use this if u need to test the Color32 struct, otherwise the displayed color will be slightly different, probably brighter.
+    VkSurfaceFormatKHR surfaceFormat = {};
+    surfaceFormat.colorSpace = VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
+    surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
+
+    vkb::Result<vkb::Swapchain> vkbSwapchainRet = swapchainBuilder
+        .set_desired_format(surfaceFormat)
+        // .use_default_format_selection()
+        .build()
+        ;
+    
+    if (!vkbSwapchainRet.has_value())
+    {
+        std::cerr << "Failed to create swapchain. VkResult: " << vkbSwapchainRet.vk_result() << std::endl;
+        return false;
+    }
+    
+    vkb::Swapchain vkbSwapchain = vkbSwapchainRet.value();
+
+    vkbSwapchain.extent = windowExtent;
+    //use vsync present mode
+    vkbSwapchain.present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+    //store swapchain and its related images
+    _swapchain = vkbSwapchain.swapchain;
+    _swapchainImages = vkbSwapchain.get_images().value();
+    _swapchainImageViews = vkbSwapchain.get_image_views().value();
+
+    _swapchainImageFormat = vkbSwapchain.image_format;
+
+
+
+    //depth image size will match the window
+    VkExtent3D depthImageExtent{
+        windowExtent.width,
+        windowExtent.height,
+        1
+    };
+
+    //hardcoding the depth format to 32 bit float
+    _depthFormat = VK_FORMAT_D32_SFLOAT;
+
+    //the depth image will be an image with the format we selected and Depth Attachment usage flag
+    VkImageCreateInfo dimg_info = VkExtImageCreateInfo(_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
+
+    //for the depth image, we want to allocate it from GPU local memory
+    VmaAllocationCreateInfo dimg_allocinfo = {};
+    dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    //allocate and create the image
+    VkResult result = vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &_depthImage._image, &_depthImage._allocation, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create depth image: " << result << std::endl;
+        return false;
+    }
+
+    //build an image-view for the depth image to use for rendering
+    VkImageViewCreateInfo dview_info = VkExtImageviewCreateInfo(_depthFormat, _depthImage._image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    result = vkCreateImageView(_device, &dview_info, nullptr, &_depthImageView);
+    if (result)
+    {
+        std::cerr << "Failed to create Vulkan image view: " << result << std::endl;
+        return false;
+    }
+
+    //add to deletion queues
+    // _mainDeletionQueue.PushDeletor
+    // (
+    //     [=]()
+    //     {
+    //         vkDestroyImageView(_device, _depthImageView, nullptr);
+    //         vmaDestroyImage(_allocator, _depthImage._image, _depthImage._allocation);
+    //     }
+    // );
+
     return true;
 }
 
