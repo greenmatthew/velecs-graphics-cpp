@@ -255,6 +255,51 @@ bool RenderEngine::InitSwapchain()
 
 bool RenderEngine::InitCommands()
 {
+    // Create a command pool for commands submitted to the graphics queue.
+    // We also want the pool to allow for resetting of individual command buffers
+    VkCommandPoolCreateInfo commandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkResult result = vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create command pool: " << result << std::endl;
+        return false;
+    }
+
+    // Allocate the default command buffer that we will use for rendering
+    VkCommandBufferAllocateInfo cmdAllocInfo = VkExtCommandBufferAllocateInfo(_commandPool, 1);
+    result = vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to allocate main command buffer: " << result << std::endl;
+        return false;
+    }
+
+    // Create pool for upload context
+    VkCommandPoolCreateInfo uploadCommandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily);
+    result = vkCreateCommandPool(_device, &uploadCommandPoolInfo, nullptr, &_uploadContext._commandPool);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create upload command pool: " << result << std::endl;
+        return false;
+    }
+
+    _mainDeletionQueue.PushDeletor
+    (
+        [=]()
+        {
+            vkDestroyCommandPool(_device, _uploadContext._commandPool, nullptr);
+        }
+    );
+
+    // Allocate the default command buffer that we will use for the instant commands
+    VkCommandBufferAllocateInfo cmdAllocInfo2 = VkExtCommandBufferAllocateInfo(_uploadContext._commandPool, 1);
+    result = vkAllocateCommandBuffers(_device, &cmdAllocInfo2, &_uploadContext._commandBuffer);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to allocate upload command buffer: " << result << std::endl;
+        return false;
+    }
+
     return true;
 }
 
