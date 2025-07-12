@@ -44,6 +44,8 @@ set(VK_BOOTSTRAP_INSTALL OFF CACHE BOOL "Disable vk-bootstrap install")
 # Add vk-bootstrap
 add_subdirectory(libs/vk-bootstrap)
 
+
+
 # Future external dependencies can be added here:
 # add_subdirectory(libs/imgui)         # For UI later
 # add_subdirectory(libs/imgui_guizo)   # For UI later
@@ -51,6 +53,11 @@ add_subdirectory(libs/vk-bootstrap)
 # add_subdirectory(libs/assimp)        # Better mesh loader
 
 # Add other velecs dependencies
+get_property(VELECS_DEPS_LOADED GLOBAL PROPERTY VELECS_DEPS_LOADED)
+if(NOT VELECS_DEPS_LOADED)
+    add_subdirectory(../velecs-deps ${CMAKE_BINARY_DIR}/velecs-deps)
+endif()
+
 if(NOT TARGET velecs-common)
    add_subdirectory(../velecs-common ${CMAKE_BINARY_DIR}/velecs-common)
 endif()
