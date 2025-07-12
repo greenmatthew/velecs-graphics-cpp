@@ -1,6 +1,6 @@
-/// @file    Graphics.hpp
+/// @file    UploadContext.hpp
 /// @author  Matthew Green
-/// @date    2025-07-11 16:10:11
+/// @date    2025-07-12 11:59:45
 /// 
 /// @section LICENSE
 /// 
@@ -10,29 +10,31 @@
 
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <vma/vk_mem_alloc.h>
+#include <vulkan/vulkan_core.h>
 
 namespace velecs::graphics {
 
-/// @class Graphics
+/// @class UploadContext
 /// @brief Brief description.
 ///
 /// Rest of description.
-class Graphics {
+class UploadContext {
 public:
     // Enums
 
     // Public Fields
 
+    VkFence _uploadFence{VK_NULL_HANDLE};
+	VkCommandPool _commandPool{VK_NULL_HANDLE};
+	VkCommandBuffer _commandBuffer{VK_NULL_HANDLE};
+
     // Constructors and Destructors
 
     /// @brief Default constructor.
-    Graphics() = default;
+    UploadContext() = default;
 
     /// @brief Default deconstructor.
-    ~Graphics() = default;
+    ~UploadContext() = default;
 
     // Public Methods
 

@@ -13,6 +13,49 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Find Vulkan SDK
+find_package(Vulkan REQUIRED)
+
+# Verify we have the SDK path for additional components
+if(NOT DEFINED ENV{VULKAN_SDK})
+    message(FATAL_ERROR "VULKAN_SDK environment variable not set")
+endif()
+
+set(VULKAN_SDK_PATH $ENV{VULKAN_SDK})
+
+# Create individual interface libraries for SDK components
+add_library(vma INTERFACE)
+target_include_directories(vma INTERFACE 
+    ${VULKAN_SDK_PATH}/Include/vma
+)
+
+add_library(volk INTERFACE)
+target_include_directories(volk INTERFACE 
+    ${VULKAN_SDK_PATH}/Include/Volk
+)
+target_link_libraries(volk INTERFACE 
+    ${VULKAN_SDK_PATH}/Lib/volk.lib
+)
+
+# Configure vk-bootstrap options before adding subdirectory
+set(VK_BOOTSTRAP_TEST OFF CACHE BOOL "Disable vk-bootstrap tests")
+set(VK_BOOTSTRAP_INSTALL OFF CACHE BOOL "Disable vk-bootstrap install")
+
+# Add vk-bootstrap
+add_subdirectory(libs/vk-bootstrap)
+
+# Add SDL3 if not already available
+if(NOT TARGET SDL3)
+    add_subdirectory(../velecs-deps ${CMAKE_BINARY_DIR}/velecs-deps)
+endif()
+
+# Future external dependencies can be added here:
+# add_subdirectory(libs/imgui)         # For UI later
+# add_subdirectory(libs/imgui_guizo)   # For UI later
+# add_subdirectory(libs/stb)           # Simple mesh loader
+# add_subdirectory(libs/assimp)        # Better mesh loader
+
+# Add other velecs dependencies
 if(NOT TARGET velecs-common)
    add_subdirectory(../velecs-common ${CMAKE_BINARY_DIR}/velecs-common)
 endif()
@@ -25,11 +68,14 @@ if(NOT TARGET velecs-ecs)
    add_subdirectory(../velecs-ecs ${CMAKE_BINARY_DIR}/velecs-ecs)
 endif()
 
-# Add external dependencies (including Vulkan)
-add_subdirectory(libs)
-
 # Source files for the library
 set(LIB_SOURCES
+   src/RenderEngine.cpp
+
+   src/VulkanInitializers.cpp
+
+   src/Memory/DeletionQueue.cpp
+
    src/Color32.cpp
 )
 
@@ -37,7 +83,13 @@ set(LIB_SOURCES
 set(LIB_HEADERS
    include/velecs/graphics/Common.hpp
 
-   include/velecs/graphics/Graphics.hpp
+   include/velecs/graphics/RenderEngine.hpp
+   include/velecs/graphics/VulkanInitializers.hpp
+
+   include/velecs/graphics/Memory/AllocatedBuffer.hpp
+   include/velecs/graphics/Memory/AllocatedImage.hpp
+   include/velecs/graphics/Memory/DeletionQueue.hpp
+   include/velecs/graphics/Memory/UploadContext.hpp
 
    include/velecs/graphics/Rect.hpp
    include/velecs/graphics/Color32.hpp
@@ -53,10 +105,14 @@ target_include_directories(velecs-graphics
 )
 
 target_link_libraries(velecs-graphics
+   PUBLIC SDL3
+   PUBLIC Vulkan::Vulkan
+   PUBLIC vma
+   PUBLIC volk
+   PUBLIC vk-bootstrap::vk-bootstrap
    PUBLIC velecs-common
    PUBLIC velecs-math
    PUBLIC velecs-ecs
-   PUBLIC Vulkan
 )
 
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
