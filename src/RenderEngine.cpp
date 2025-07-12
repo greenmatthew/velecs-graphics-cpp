@@ -439,6 +439,54 @@ bool RenderEngine::InitFramebuffers()
 
 bool RenderEngine::InitSyncStructures()
 {
+    // We want to create the fence with the Create Signaled flag, so we can wait on it before using it on a GPU command (for the first frame)
+    VkFenceCreateInfo fenceCreateInfo = VkExtFenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+
+    VkResult result = vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create render fence: " << result << std::endl;
+        return false;
+    }
+
+    VkFenceCreateInfo uploadFenceCreateInfo = VkExtFenceCreateInfo();
+
+    result = vkCreateFence(_device, &uploadFenceCreateInfo, nullptr, &_uploadContext._uploadFence);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create upload fence: " << result << std::endl;
+        return false;
+    }
+
+    // For the semaphores we don't need any flags
+    VkSemaphoreCreateInfo semaphoreCreateInfo = VkExtSemaphoreCreateInfo();
+
+    result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create present semaphore: " << result << std::endl;
+        return false;
+    }
+
+    result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create render semaphore: " << result << std::endl;
+        return false;
+    }
+
+    _mainDeletionQueue.PushDeletor
+    (
+        [=]()
+        {
+            vkDestroyFence(_device, _uploadContext._uploadFence, nullptr);
+            vkDestroyFence(_device, _renderFence, nullptr);
+
+            vkDestroySemaphore(_device, _presentSemaphore, nullptr);
+            vkDestroySemaphore(_device, _renderSemaphore, nullptr);
+        }
+    );
+
     return true;
 }
 
