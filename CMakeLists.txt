@@ -44,11 +44,6 @@ set(VK_BOOTSTRAP_INSTALL OFF CACHE BOOL "Disable vk-bootstrap install")
 # Add vk-bootstrap
 add_subdirectory(libs/vk-bootstrap)
 
-# Add SDL3 if not already available
-if(NOT TARGET SDL3)
-    add_subdirectory(../velecs-deps ${CMAKE_BINARY_DIR}/velecs-deps)
-endif()
-
 # Future external dependencies can be added here:
 # add_subdirectory(libs/imgui)         # For UI later
 # add_subdirectory(libs/imgui_guizo)   # For UI later
@@ -105,7 +100,7 @@ target_include_directories(velecs-graphics
 )
 
 target_link_libraries(velecs-graphics
-   PUBLIC SDL3
+   PUBLIC SDL3::SDL3
    PUBLIC Vulkan::Vulkan
    PUBLIC vma
    PUBLIC volk
