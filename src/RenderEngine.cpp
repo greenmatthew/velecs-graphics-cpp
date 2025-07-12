@@ -26,7 +26,7 @@ namespace velecs::graphics {
 // Public Fields
 
 const bool RenderEngine::ENABLE_VALIDATION_LAYERS
-#ifdef DEBUG_MODE
+#ifdef _DEBUG
     = true;
 #else
     = false;
@@ -81,21 +81,27 @@ bool RenderEngine::InitVulkan()
         return false;
     }
 
-    // #ifdef DEBUG_MODE
-    // // After building the instance, but before creating the device:
-    // if (builderResult)
-    // {
-    //     std::cout << "Available validation layers:" << std::endl;
-    //     uint32_t layerCount;
-    //     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    //     std::vector<VkLayerProperties> availableLayers(layerCount);
-    //     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-    //     for (const auto& layer : availableLayers)
-    //     {
-    //         std::cout << "\t" << layer.layerName << std::endl;
-    //     }
-    // }
-    // #endif
+    if (ENABLE_VALIDATION_LAYERS && builderResult) 
+    {
+        std::cout << "Available validation layers:" << std::endl;
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+        
+        bool foundValidationLayer = false;
+        for (const auto& layer : availableLayers) 
+        {
+            std::cout << "\t" << layer.layerName << std::endl;
+            if (strcmp(layer.layerName, "VK_LAYER_KHRONOS_validation") == 0) {
+                foundValidationLayer = true;
+            }
+        }
+        
+        if (!foundValidationLayer) {
+            std::cout << "WARNING: Validation layers requested but VK_LAYER_KHRONOS_validation not found!" << std::endl;
+        }
+    }
 
     vkb::Instance vkb_inst = builderResult.value();
 
