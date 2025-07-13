@@ -1,4 +1,4 @@
-/// @file    Shader.cpp
+// @file    Shader.cpp
 /// @author  Matthew Green
 /// @date    2025-07-13 14:12:43
 /// 
@@ -10,6 +10,9 @@
 
 #include "velecs/graphics/Shader.hpp"
 
+#include <velecs/common/Paths.hpp>
+using namespace velecs::common;
+
 #include <iostream>
 #include <sstream>
 
@@ -18,13 +21,13 @@ namespace velecs::graphics {
 // Constructors and Destructors
 
 Shader::Shader(Shader&& other) noexcept
-    : _device(other._device)
-    , _stage(other._stage)
-    , _filePath(std::move(other._filePath))
-    , _entryPoint(std::move(other._entryPoint))
-    , _spirvCode(std::move(other._spirvCode))
-    , _module(other._module)
-    , _stageCreateInfo(other._stageCreateInfo)
+    : _device(other._device),
+        _stage(other._stage),
+        _relPath(std::move(other._relPath)),
+        _entryPoint(std::move(other._entryPoint)),
+        _spirvCode(std::move(other._spirvCode)),
+        _module(other._module),
+        _stageCreateInfo(other._stageCreateInfo)
 {
     other._device = VK_NULL_HANDLE;
     other._module = VK_NULL_HANDLE;
@@ -39,7 +42,7 @@ Shader& Shader::operator=(Shader&& other) noexcept
 
         _device = other._device;
         _stage = other._stage;
-        _filePath = std::move(other._filePath);
+        _relPath = std::move(other._relPath);
         _entryPoint = std::move(other._entryPoint);
         _spirvCode = std::move(other._spirvCode);
         _module = other._module;
@@ -57,11 +60,11 @@ Shader& Shader::operator=(Shader&& other) noexcept
 std::unique_ptr<Shader> Shader::FromFile(
     VkDevice device,
     VkShaderStageFlagBits stage,
-    const std::string& filePath,
+    const std::filesystem::path& relPath,
     const std::string& entryPoint
 )
 {
-    return std::make_unique<Shader>(device, stage, filePath, entryPoint, ConstructorKey{});
+    return std::make_unique<Shader>(device, stage, relPath, entryPoint, ConstructorKey{});
 }
 
 std::unique_ptr<Shader> Shader::FromCode(
@@ -79,7 +82,7 @@ Shader& Shader::Reload()
     // Clean up existing module first
     Cleanup();
 
-    if (_filePath.empty())
+    if (_relPath.empty())
     {
         // Rebuild from stored SPIR-V code
         BuildFromCode();
@@ -97,12 +100,12 @@ Shader& Shader::Reload()
 
 void Shader::BuildFromFile()
 {
-    if (_filePath.empty())
+    if (_relPath.empty())
     {
         throw std::runtime_error("Cannot build shader from file: no file path provided");
     }
 
-    std::vector<uint32_t> spirvCode = LoadSpirVFromFile(_filePath);
+    std::vector<uint32_t> spirvCode = LoadSpirVFromFile(_relPath);
     _module = CreateModuleFromCode(spirvCode);
     _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module);
 }
@@ -146,13 +149,15 @@ VkShaderModule Shader::CreateModuleFromCode(const std::vector<uint32_t>& spirvCo
     return shaderModule;
 }
 
-std::vector<uint32_t> Shader::LoadSpirVFromFile(const std::string& filePath)
+std::vector<uint32_t> Shader::LoadSpirVFromFile(const std::filesystem::path& relPath)
 {
+    auto filePath = Paths::AssetsDir() / relPath;
+
     // open the file. With cursor at the end
     std::ifstream file(filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open())
     {
-        throw std::runtime_error("Failed to open shader file: " + filePath);
+        throw std::runtime_error("Failed to open shader file: " + filePath.string());
     }
 
     // find what the size of the file is by looking up the location of the cursor
@@ -161,13 +166,13 @@ std::vector<uint32_t> Shader::LoadSpirVFromFile(const std::string& filePath)
 
     if (fileSize == 0)
     {
-        throw std::runtime_error("Shader file is empty: " + filePath);
+        throw std::runtime_error("Shader file is empty: " + filePath.string());
     }
 
     // SPIR-V files should be aligned to 4-byte boundaries
     if (fileSize % sizeof(uint32_t) != 0)
     {
-        throw std::runtime_error("Invalid SPIR-V file size (not aligned to 4 bytes): " + filePath);
+        throw std::runtime_error("Invalid SPIR-V file size (not aligned to 4 bytes): " + filePath.string());
     }
 
     // spirv expects the buffer to be on uint32, so make sure to reserve an int vector big enough for the entire file
@@ -185,7 +190,7 @@ std::vector<uint32_t> Shader::LoadSpirVFromFile(const std::string& filePath)
     // Basic SPIR-V magic number validation
     if (!buffer.empty() && buffer[0] != 0x07230203)
     {
-        throw std::runtime_error("Invalid SPIR-V magic number in file: " + filePath);
+        throw std::runtime_error("Invalid SPIR-V magic number in file: " + filePath.string());
     }
 
     return buffer;

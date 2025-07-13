@@ -13,6 +13,7 @@
 #include "velecs/graphics/VulkanInitializers.hpp"
 #include "velecs/graphics/PipelineBuilder.hpp"
 #include "velecs/graphics/Vertex.hpp"
+#include "velecs/graphics/Shader.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -494,42 +495,40 @@ bool RenderEngine::InitSyncStructures()
 
 bool RenderEngine::InitPipelines()
 {
-    //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
-    PipelineBuilder pipelineBuilder;
+    Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "shader/test.vert.spv");
 
-    //vertex input controls how to read vertices from vertex buffers. We aren't using it yet
-    pipelineBuilder._vertexInputInfo = VkExtVertexInputStateCreateInfo();
+    // //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
+    // PipelineBuilder pipelineBuilder;
 
-    //input assembly is the configuration for drawing triangle lists, strips, or individual points.
-    //we are just going to draw triangle list
-    pipelineBuilder._inputAssembly = VkExtInputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    // //vertex input controls how to read vertices from vertex buffers. We aren't using it yet
+    // pipelineBuilder._vertexInputInfo = VkExtVertexInputStateCreateInfo();
 
-    //build viewport and scissor from the swapchain extents
-    pipelineBuilder._viewport.x = 0.0f;
-    pipelineBuilder._viewport.y = 0.0f;
-    VkExtent2D windowExtent = GetWindowExtent();
-    pipelineBuilder._viewport.width = static_cast<float>(windowExtent.width);
-    pipelineBuilder._viewport.height = static_cast<float>(windowExtent.height);
-    pipelineBuilder._viewport.minDepth = 0.0f;
-    pipelineBuilder._viewport.maxDepth = 1.0f;
+    // //input assembly is the configuration for drawing triangle lists, strips, or individual points.
+    // //we are just going to draw triangle list
+    // pipelineBuilder._inputAssembly = VkExtInputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-    pipelineBuilder._scissor.offset = { 0, 0 };
-    pipelineBuilder._scissor.extent = windowExtent;
+    // //build viewport and scissor from the swapchain extents
+    // pipelineBuilder._viewport.x = 0.0f;
+    // pipelineBuilder._viewport.y = 0.0f;
+    // VkExtent2D windowExtent = GetWindowExtent();
+    // pipelineBuilder._viewport.width = static_cast<float>(windowExtent.width);
+    // pipelineBuilder._viewport.height = static_cast<float>(windowExtent.height);
+    // pipelineBuilder._viewport.minDepth = 0.0f;
+    // pipelineBuilder._viewport.maxDepth = 1.0f;
 
-    //configure the rasterizer to draw filled triangles
-    pipelineBuilder._rasterizer = VkExtRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    // pipelineBuilder._scissor.offset = { 0, 0 };
+    // pipelineBuilder._scissor.extent = windowExtent;
 
-    //we don't use multisampling, so just run the default one
-    pipelineBuilder._multisampling = VkExtMultisamplingStateCreateInfo();
+    // //configure the rasterizer to draw filled triangles
+    // pipelineBuilder._rasterizer = VkExtRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-    //a single blend attachment with no blending and writing to RGBA
-    pipelineBuilder._colorBlendAttachment = VkExtColorBlendAttachmentState();
+    // //we don't use multisampling, so just run the default one
+    // pipelineBuilder._multisampling = VkExtMultisamplingStateCreateInfo();
 
-    pipelineBuilder._depthStencil = VkExtDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
+    // //a single blend attachment with no blending and writing to RGBA
+    // pipelineBuilder._colorBlendAttachment = VkExtColorBlendAttachmentState();
 
-
-
-
+    // pipelineBuilder._depthStencil = VkExtDepthStencilCreateInfo(true, true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 
 
@@ -538,34 +537,38 @@ bool RenderEngine::InitPipelines()
 
 
 
-    //we start from just the default empty pipeline layout info
-    VkPipelineLayoutCreateInfo mesh_pipeline_layout_info = VkExtPipelineLayoutCreateInfo();
 
-    VkResult result = vkCreatePipelineLayout(_device, &mesh_pipeline_layout_info, nullptr, &_meshPipelineLayout);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create mesh pipeline layout: " << result << std::endl;
-        return false;
-    }
 
-    pipelineBuilder._vertexInputInfo = Vertex::GetVertexInputInfo();
 
-    // //add the other shaders
-    // const ShaderModule meshVertShader = ShaderModule::CreateVertShader(_device, "Mesh/Mesh.vert.spv");
-    // pipelineBuilder._shaderStages.push_back(meshVertShader.pipelineShaderStageCreateInfo);
 
-    // //make sure that triangleFragShader is holding the compiled colored_triangle.frag
-    // const ShaderModule meshFragShader = ShaderModule::CreateFragShader(_device, "Mesh/Mesh.frag.spv");
-    // pipelineBuilder._shaderStages.push_back(meshFragShader.pipelineShaderStageCreateInfo);
+    // //we start from just the default empty pipeline layout info
+    // VkPipelineLayoutCreateInfo mesh_pipeline_layout_info = VkExtPipelineLayoutCreateInfo();
 
-    pipelineBuilder._pipelineLayout = _meshPipelineLayout;
+    // VkResult result = vkCreatePipelineLayout(_device, &mesh_pipeline_layout_info, nullptr, &_meshPipelineLayout);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create mesh pipeline layout: " << result << std::endl;
+    //     return false;
+    // }
 
-    _meshPipeline = pipelineBuilder.BuildPipeline(_device, _renderPass);
+    // pipelineBuilder._vertexInputInfo = Vertex::GetVertexInputInfo();
 
-    // Material::Create(ecs(), "Mesh/Mesh", &_meshPipeline, &_meshPipelineLayout);
+    // // //add the other shaders
+    // // const ShaderModule meshVertShader = ShaderModule::CreateVertShader(_device, "Mesh/Mesh.vert.spv");
+    // // pipelineBuilder._shaderStages.push_back(meshVertShader.pipelineShaderStageCreateInfo);
 
-    //clear the shader stages for the builder
-    pipelineBuilder._shaderStages.clear();
+    // // //make sure that triangleFragShader is holding the compiled colored_triangle.frag
+    // // const ShaderModule meshFragShader = ShaderModule::CreateFragShader(_device, "Mesh/Mesh.frag.spv");
+    // // pipelineBuilder._shaderStages.push_back(meshFragShader.pipelineShaderStageCreateInfo);
+
+    // pipelineBuilder._pipelineLayout = _meshPipelineLayout;
+
+    // _meshPipeline = pipelineBuilder.BuildPipeline(_device, _renderPass);
+
+    // // Material::Create(ecs(), "Mesh/Mesh", &_meshPipeline, &_meshPipelineLayout);
+
+    // //clear the shader stages for the builder
+    // pipelineBuilder._shaderStages.clear();
 
     
 

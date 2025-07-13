@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <memory>
 #include <fstream>
+#include <filesystem>
 
 namespace velecs::graphics {
 
@@ -27,6 +28,7 @@ namespace velecs::graphics {
 ///
 /// This class manages the lifecycle of a Vulkan shader module and provides
 /// convenient methods for loading from files and integrating with pipelines.
+/// File paths are interpreted as relative to the assets directory.
 class Shader {
 public:
     // Enums
@@ -44,16 +46,16 @@ public:
     /// @brief Constructor for creating a shader from file (use factory methods instead)
     /// @param device The Vulkan device handle
     /// @param stage The shader stage type
-    /// @param filePath Path to the SPIR-V file
+    /// @param relPath Path to the SPIR-V file relative to the assets directory
     /// @param entryPoint The entry point function name
     /// @param key Access key (only accessible via factory methods)
     inline Shader(
         VkDevice device,
         VkShaderStageFlagBits stage,
-        const std::string& filePath,
+        const std::filesystem::path& relPath,
         const std::string& entryPoint,
         ConstructorKey key
-    ) : _device(device), _stage(stage), _filePath(filePath), _entryPoint(entryPoint) 
+    ) : _device(device), _stage(stage), _relPath(relPath), _entryPoint(entryPoint) 
     {
         BuildFromFile();
     }
@@ -88,16 +90,17 @@ public:
 
     // Public Methods
 
-    /// @brief Creates a shader from a SPIR-V file
+    /// @brief Creates a shader from a SPIR-V file in the assets directory
     /// @param device The Vulkan device handle
     /// @param stage The shader stage type
-    /// @param filePath Path to the SPIR-V file
+    /// @param relPath Path to the SPIR-V file relative to the assets directory (e.g., "shaders/vertex.spv")
     /// @param entryPoint The entry point function name (default: "main")
     /// @return Unique pointer to the created shader
+    /// @note The file path is resolved relative to Paths::AssetsDir()
     static std::unique_ptr<Shader> FromFile(
         VkDevice device,
         VkShaderStageFlagBits stage,
-        const std::string& filePath,
+        const std::filesystem::path& relPath,
         const std::string& entryPoint = "main"
     );
 
@@ -126,9 +129,9 @@ public:
     /// @return The shader stage flags
     inline VkShaderStageFlagBits GetStage() const { return _stage; }
 
-    /// @brief Gets the source file path
-    /// @return The file path (empty if created from code)
-    inline const std::string& GetFilePath() const { return _filePath; }
+    /// @brief Gets the relative file path
+    /// @return The file path relative to the assets directory (empty if created from code)
+    inline const std::filesystem::path& GetFilePath() const { return _relPath; }
 
     /// @brief Gets the entry point function name
     /// @return The entry point name
@@ -157,7 +160,7 @@ private:
 
     VkDevice _device{VK_NULL_HANDLE};                    /// @brief The Vulkan device handle
     VkShaderStageFlagBits _stage{};                      /// @brief The shader stage type
-    std::string _filePath;                               /// @brief Source file path (empty if from code)
+    std::filesystem::path _relPath;                      /// @brief File path relative to `Paths::AssetsDir()`
     std::string _entryPoint;                             /// @brief Entry point function name
     std::vector<uint32_t> _spirvCode;                    /// @brief SPIR-V bytecode (stored if created from code)
     VkShaderModule _module{VK_NULL_HANDLE};              /// @brief The compiled shader module
@@ -177,11 +180,11 @@ private:
     /// @throws std::runtime_error on creation failure
     VkShaderModule CreateModuleFromCode(const std::vector<uint32_t>& spirvCode);
 
-    /// @brief Loads SPIR-V bytecode from a file
-    /// @param filePath Path to the SPIR-V file
+    /// @brief Loads SPIR-V bytecode from a file relative to the assets directory
+    /// @param relPath Path to the SPIR-V file relative to the assets directory
     /// @return Vector containing the bytecode
     /// @throws std::runtime_error on file reading failure
-    static std::vector<uint32_t> LoadSpirVFromFile(const std::string& filePath);
+    static std::vector<uint32_t> LoadSpirVFromFile(const std::filesystem::path& relPath);
 
     /// @brief Cleans up Vulkan resources
     void Cleanup();
