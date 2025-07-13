@@ -79,6 +79,7 @@ set(LIB_SOURCES
    src/VulkanInitializers.cpp
    src/PipelineBuilder.cpp
    src/VertexBufferParamsBuilder.cpp
+   src/Shader.cpp
 
    src/Color32.cpp
 )
@@ -99,6 +100,7 @@ set(LIB_HEADERS
    include/velecs/graphics/PipelineBuilder.hpp
    include/velecs/graphics/VertexBufferParamsBuilder.hpp
    include/velecs/graphics/Vertex.hpp
+   include/velecs/graphics/Shader.hpp
 
    include/velecs/graphics/Rect.hpp
    include/velecs/graphics/Color32.hpp
