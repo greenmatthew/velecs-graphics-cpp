@@ -8,7 +8,7 @@
 /// Unauthorized copying of this file, via any medium is strictly prohibited
 /// Proprietary and confidential
 
-#include "velecs/graphics/Shader.hpp"
+#include "velecs/graphics/Shader/Shader.hpp"
 
 #include <velecs/common/Paths.hpp>
 using namespace velecs::common;
