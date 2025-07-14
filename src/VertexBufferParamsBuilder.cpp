@@ -42,6 +42,9 @@ VkPipelineVertexInputStateCreateInfo VertexBufferParamsBuilder::GetCreateInfo()
     VkPipelineVertexInputStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     info.pNext = nullptr;
+    // "`flags` is reserved for future use." according to the Vulkan spec:
+    // https://registry.khronos.org/vulkan/specs/latest/man/html/VkPipelineVertexInputStateCreateInfo.html
+    info.flags = 0;
     
     info.pVertexBindingDescriptions = _bindings.data();
     info.vertexBindingDescriptionCount = static_cast<uint32_t>(_bindings.size());
