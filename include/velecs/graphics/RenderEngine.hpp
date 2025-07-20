@@ -13,6 +13,7 @@
 #include "velecs/graphics/Memory/UploadContext.hpp"
 #include "velecs/graphics/Memory/DeletionQueue.hpp"
 #include "velecs/graphics/Memory/AllocatedImage.hpp"
+#include "velecs/graphics/Memory/AllocatedBuffer.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -20,6 +21,8 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+
+#include <optional>
 
 namespace velecs::graphics {
 
@@ -47,6 +50,7 @@ public:
     // Public Methods
 
     SDL_AppResult Init();
+    void Draw();
     void Cleanup();
 
 protected:
@@ -109,6 +113,13 @@ private:
 
     VkDescriptorPool imguiPool{VK_NULL_HANDLE};
 
+
+
+    // These fields should be better handled
+    AllocatedBuffer _triangleVertexBuffer{VK_NULL_HANDLE};
+    AllocatedBuffer _triangleIndexBuffer{VK_NULL_HANDLE};
+    VkPipeline _vertexColorsPipeline{VK_NULL_HANDLE};
+
     // Private Methods
 
     bool InitVulkan();
@@ -122,6 +133,91 @@ private:
     void CleanupVulkan();
 
     VkExtent2D GetWindowExtent() const;
+
+
+    // These functions should be better handled
+    void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
+
+    template<typename T>
+    std::optional<AllocatedBuffer> CreateBuffer(const std::vector<T>& data, VkBufferUsageFlags usage)
+    {
+        const size_t bufferSize = data.size() * sizeof(T);
+        
+        // Create staging buffer (CPU accessible)
+        VkBufferCreateInfo stagingBufferInfo{};
+        stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        stagingBufferInfo.size = bufferSize;
+        stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        
+        VmaAllocationCreateInfo stagingAllocInfo{};
+        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+        
+        AllocatedBuffer stagingBuffer;
+        VkResult result = vmaCreateBuffer(
+            _allocator,
+            &stagingBufferInfo,
+            &stagingAllocInfo,
+            &stagingBuffer._buffer,
+            &stagingBuffer._allocation,
+            nullptr
+        );
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create staging buffer: " << result << std::endl;
+            return std::nullopt; // Fixed: was "return;"
+        }
+        
+        // Copy data to staging buffer
+        void* mappedData;
+        vmaMapMemory(_allocator, stagingBuffer._allocation, &mappedData);
+        memcpy(mappedData, data.data(), bufferSize);
+        vmaUnmapMemory(_allocator, stagingBuffer._allocation);
+        
+        // Create GPU buffer
+        VkBufferCreateInfo gpuBufferInfo{};
+        gpuBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        gpuBufferInfo.size = bufferSize;
+        gpuBufferInfo.usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        
+        VmaAllocationCreateInfo gpuAllocInfo{};
+        gpuAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        
+        AllocatedBuffer gpuBuffer;
+        result = vmaCreateBuffer(
+            _allocator,
+            &gpuBufferInfo,
+            &gpuAllocInfo,
+            &gpuBuffer._buffer,
+            &gpuBuffer._allocation,
+            nullptr
+        );
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create GPU buffer: " << result << std::endl;
+            // Cleanup staging buffer before returning
+            vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
+            return std::nullopt; // Fixed: was "std::optional::none"
+        }
+        
+        // Copy from staging to GPU buffer
+        ImmediateSubmit([=](VkCommandBuffer cmd) {
+            VkBufferCopy copy{};
+            copy.size = bufferSize;
+            vkCmdCopyBuffer(cmd, stagingBuffer._buffer, gpuBuffer._buffer, 1, &copy);
+        });
+        
+        // Cleanup staging buffer
+        vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
+        
+        // Add GPU buffer to deletion queue
+        _mainDeletionQueue.PushDeletor([=]() {
+            vmaDestroyBuffer(_allocator, gpuBuffer._buffer, gpuBuffer._allocation);
+        });
+        
+        return gpuBuffer; // Success case
+    }
+
+    void CreateTriangleBuffers();
 };
 
 } // namespace velecs::graphics

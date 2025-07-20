@@ -24,15 +24,13 @@ namespace velecs::graphics {
 struct Vertex {
     using Vec3 = velecs::math::Vec3;
 
-    Vec3 pos;
-    uint16_t normX, normY;
-    Color32 color;
+    Vec3 pos;      // location 0
+    Color32 color; // location 1
 
     inline static VkPipelineVertexInputStateCreateInfo GetVertexInputInfo() {
         static const auto createInfo = VertexBufferParamsBuilder()
             .AddBinding(sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX, [](auto& binding) {
                 binding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos))
-                       .AddAttribute(VK_FORMAT_R16G16_SNORM, offsetof(Vertex, normX))
                        .AddAttribute(VK_FORMAT_B8G8R8A8_SRGB, offsetof(Vertex, color));
             })
             .GetCreateInfo();

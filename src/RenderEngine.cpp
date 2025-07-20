@@ -51,8 +51,15 @@ SDL_AppResult RenderEngine::Init()
     if (!InitFramebuffers()  ) return SDL_APP_FAILURE;
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
+
+    CreateTriangleBuffers();
     
     return SDL_APP_CONTINUE;
+}
+
+void RenderEngine::Draw()
+{
+
 }
 
 void RenderEngine::Cleanup()
@@ -498,13 +505,17 @@ bool RenderEngine::InitSyncStructures()
 
 bool RenderEngine::InitPipelines()
 {
-    RasterizationShaderProgram program{};
-    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/test.vert.spv");
-    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/test.frag.spv");
+    // RasterizationShaderProgram program{};
+    // program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/test.vert.spv");
+    // program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/test.frag.spv");
 
     // Material mat{};
     // mat.shaderProgram = program;
     // mat.fields == ShaderReflector::Merge(ShaderReflector::Reflect(program.vert + program.frag + ...));
+
+    RasterizationShaderProgram vertexColorsProgram{};
+    vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/vertex_colors.vert.spv");
+    vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/vertex_colors.frag.spv");
 
     RenderPipelineLayout pipelineLayout{};
     pipelineLayout.SetDevice(_device);
@@ -515,7 +526,10 @@ bool RenderEngine::InitPipelines()
         .SetViewport(GetWindowExtent())
         .SetPipelineLayout(pipelineLayout.GetLayout())
         .SetVertexInput(Vertex::GetVertexInputInfo())
+        .AddShader(*vertexColorsProgram.vert)
+        .AddShader(*vertexColorsProgram.frag)
         ;
+    _vertexColorsPipeline = pipeline.GetPipeline();
 
     // //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
     // PipelineBuilder pipelineBuilder;
@@ -674,6 +688,66 @@ VkExtent2D RenderEngine::GetWindowExtent() const
         static_cast<uint32_t>(width), 
         static_cast<uint32_t>(height)
     };
+}
+
+void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
+{
+    VkCommandBuffer cmd = _uploadContext._commandBuffer;
+    
+    VkCommandBufferBeginInfo cmdBeginInfo = VkExtCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    VkResult result = vkBeginCommandBuffer(cmd, &cmdBeginInfo);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to begin command buffer: " << result << std::endl;
+        return;
+    }
+    
+    function(cmd);
+    
+    result = vkEndCommandBuffer(cmd);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to end command buffer: " << result << std::endl;
+        return;
+    }
+    
+    VkSubmitInfo submit = VkExtSubmitInfo(&cmd);
+    result = vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to submit to queue: " << result << std::endl;
+        return;
+    }
+    
+    vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
+    vkResetFences(_device, 1, &_uploadContext._uploadFence);
+    vkResetCommandPool(_device, _uploadContext._commandPool, 0);
+}
+
+void RenderEngine::CreateTriangleBuffers()
+{
+    // Triangle data
+    std::vector<Vertex> vertices = {
+        {{-0.5f, -0.5f, 0.0f}, Color32::RED},
+        {{ 0.5f, -0.5f, 0.0f}, Color32::GREEN},
+        {{ 0.0f,  0.5f, 0.0f}, Color32::BLUE}
+    };
+    
+    std::vector<uint16_t> indices = {0, 1, 2};
+
+    
+    // Create buffers with error handling
+    auto vertexBufferOpt = CreateBuffer(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    if (!vertexBufferOpt.has_value()) {
+        throw std::runtime_error("Failed to create vertex buffer");
+    }
+    _triangleVertexBuffer = vertexBufferOpt.value();
+    
+    auto indexBufferOpt = CreateBuffer(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    if (!indexBufferOpt.has_value()) {
+        throw std::runtime_error("Failed to create index buffer");
+    }
+    _triangleIndexBuffer = indexBufferOpt.value();
 }
 
 } // namespace velecs::graphics
