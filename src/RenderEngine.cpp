@@ -757,12 +757,13 @@ void RenderEngine::CreateTriangleBuffers()
 {
     // Triangle data
     std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.0f}, Color32::RED},
-        {{ 0.5f, -0.5f, 0.0f}, Color32::GREEN},
-        {{ 0.0f,  0.5f, 0.0f}, Color32::BLUE}
+        {{-0.5f, -0.5f, 0.0f}, Color32::RED},    // 0: bottom-left
+        {{ 0.5f, -0.5f, 0.0f}, Color32::GREEN},  // 1: bottom-right
+        {{ 0.0f,  0.5f, 0.0f}, Color32::BLUE}    // 2: top
     };
     
-    std::vector<uint16_t> indices = {0, 1, 2};
+    // Counter-clockwise winding: 0 → 2 → 1 (bottom-left → top → bottom-right)
+    std::vector<uint16_t> indices = {0, 2, 1};
 
     
     // Create buffers with error handling
@@ -936,6 +937,9 @@ void RenderEngine::PostDraw()
         std::cerr << "Failed to present queue: " << result << std::endl;
         return;
     }
+
+    // TODO: replace with multiple semaphores... one for each frame buffer
+    vkDeviceWaitIdle(_device);
 }
 
 } // namespace velecs::graphics
