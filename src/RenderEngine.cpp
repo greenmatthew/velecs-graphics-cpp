@@ -53,6 +53,13 @@ SDL_AppResult RenderEngine::Init()
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     CreateTriangleBuffers();
+    
+    return SDL_APP_CONTINUE;
+}
+
+void RenderEngine::Draw()
+{
+    PreDraw();
 
     vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
 
@@ -71,19 +78,12 @@ SDL_AppResult RenderEngine::Init()
 
     vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
-    
-    return SDL_APP_CONTINUE;
-}
-
-void RenderEngine::Draw()
-{
-    PreDraw();
 
     //bind the mesh vertex buffer with offset 0
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(_mainCommandBuffer, 0, 1, &_triangleVertexBuffer._buffer, &offset);
 
-    vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT16);
 
     //we can now draw the mesh
     vkCmdDrawIndexed(_mainCommandBuffer, (uint32_t)3, 1, 0, 0, 0);
