@@ -53,13 +53,42 @@ SDL_AppResult RenderEngine::Init()
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     CreateTriangleBuffers();
+
+    vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
+
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    auto windowExtent = GetWindowExtent();
+    viewport.width = static_cast<float>(windowExtent.width);
+    viewport.height = static_cast<float>(windowExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.offset = {0, 0};
+    scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
+
+    vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
+    vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
     
     return SDL_APP_CONTINUE;
 }
 
 void RenderEngine::Draw()
 {
+    PreDraw();
 
+    //bind the mesh vertex buffer with offset 0
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(_mainCommandBuffer, 0, 1, &_triangleVertexBuffer._buffer, &offset);
+
+    vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT32);
+
+    //we can now draw the mesh
+    vkCmdDrawIndexed(_mainCommandBuffer, (uint32_t)3, 1, 0, 0, 0);
+
+    PostDraw();
 }
 
 void RenderEngine::Cleanup()
@@ -748,6 +777,165 @@ void RenderEngine::CreateTriangleBuffers()
         throw std::runtime_error("Failed to create index buffer");
     }
     _triangleIndexBuffer = indexBufferOpt.value();
+}
+
+void RenderEngine::PreDraw()
+{
+    // Start the Dear ImGui frame
+    // ImGui_ImplVulkan_NewFrame();
+    // ImGui_ImplSDL2_NewFrame();
+    // ImGui::NewFrame();
+
+    //wait until the GPU has finished rendering the last frame. Timeout of 1 second
+    VkResult result = vkWaitForFences(_device, 1, &_renderFence, true, 1000000000);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to wait for fence: " << result << std::endl;
+        return;
+    }
+
+    result = vkResetFences(_device, 1, &_renderFence);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to reset fence: " << result << std::endl;
+        return;
+    }
+
+    //request image from the swapchain, one second timeout
+    result = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to acquire image from swapchain: " << result << std::endl;
+        return;
+    }
+
+    //now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
+    result = vkResetCommandBuffer(_mainCommandBuffer, 0);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to reset command buffer: " << result << std::endl;
+        return;
+    }
+
+    //begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
+    VkCommandBufferBeginInfo cmdBeginInfo = {};
+    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmdBeginInfo.pNext = nullptr;
+
+    cmdBeginInfo.pInheritanceInfo = nullptr;
+    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    result = vkBeginCommandBuffer(_mainCommandBuffer, &cmdBeginInfo);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to begin command buffer: " << result << std::endl;
+        return;
+    }
+
+    VkClearValue clearValue = {};
+    // float flash = abs(sin(_frameNumber / 3840.f));
+    // clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+    Color32 color = Color32::FromHex("#181818");
+    clearValue.color = { { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f } };
+
+    //clear depth at 1
+	VkClearValue depthClear;
+	depthClear.depthStencil.depth = 1.f;
+
+    VkClearValue clearValues[] = { clearValue, depthClear };
+
+    //start the main renderpass.
+    //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+    VkRenderPassBeginInfo rpInfo = {};
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpInfo.pNext = nullptr;
+
+    rpInfo.renderPass = _renderPass;
+    rpInfo.renderArea.offset.x = 0;
+    rpInfo.renderArea.offset.y = 0;
+    rpInfo.renderArea.extent = GetWindowExtent();
+    rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
+
+    //connect clear values
+    rpInfo.clearValueCount = 2;
+    rpInfo.pClearValues = &clearValues[0];
+
+    vkCmdBeginRenderPass(_mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void RenderEngine::PostDraw()
+{
+    // Rendering imgui
+    // ImGui::Render();
+    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), _mainCommandBuffer);
+
+    //finalize the render pass
+    vkCmdEndRenderPass(_mainCommandBuffer);
+    //finalize the command buffer (we can no longer add commands, but it can now be executed)
+    VkResult result = vkEndCommandBuffer(_mainCommandBuffer);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to end command buffer: " << result << std::endl;
+        return;
+    }
+
+
+    //prepare the submission to the queue.
+    //we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+    //we will signal the _renderSemaphore, to signal that rendering has finished
+
+    VkSubmitInfo submit = {};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.pNext = nullptr;
+
+    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    submit.pWaitDstStageMask = &waitStage;
+
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &_presentSemaphore;
+
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &_renderSemaphore;
+
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &_mainCommandBuffer;
+
+    //submit command buffer to the queue and execute it.
+    // _renderFence will now block until the graphic commands finish execution
+    result = vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to submit queue: " << result << std::endl;
+        return;
+    }
+
+
+    // this will put the image we just rendered into the visible window.
+    // we want to wait on the _renderSemaphore for that,
+    // as it's necessary that drawing commands have finished before the image is displayed to the user
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+
+    presentInfo.pSwapchains = &_swapchain;
+    presentInfo.swapchainCount = 1;
+
+    presentInfo.pWaitSemaphores = &_renderSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+
+    presentInfo.pImageIndices = &swapchainImageIndex;
+
+    result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        // Ignore for now
+    }
+    else if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to present queue: " << result << std::endl;
+        return;
+    }
 }
 
 } // namespace velecs::graphics

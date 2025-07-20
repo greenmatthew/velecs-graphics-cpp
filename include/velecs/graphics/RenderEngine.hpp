@@ -218,6 +218,9 @@ private:
     }
 
     void CreateTriangleBuffers();
+
+    void PreDraw();
+    void PostDraw();
 };
 
 } // namespace velecs::graphics
