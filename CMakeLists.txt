@@ -44,7 +44,14 @@ set(VK_BOOTSTRAP_INSTALL OFF CACHE BOOL "Disable vk-bootstrap install")
 # Add vk-bootstrap
 add_subdirectory(libs/vk-bootstrap)
 
-
+add_library(spirv_cross INTERFACE)
+target_include_directories(spirv_cross INTERFACE 
+    ${VULKAN_SDK_PATH}/Include/spirv_cross
+)
+target_link_libraries(spirv_cross INTERFACE 
+    $<$<CONFIG:Debug>:${VULKAN_SDK_PATH}/Lib/spirv-cross-cored.lib>
+    $<$<CONFIG:Release>:${VULKAN_SDK_PATH}/Lib/spirv-cross-core.lib>
+)
 
 # Future external dependencies can be added here:
 # add_subdirectory(libs/imgui)         # For UI later
@@ -78,8 +85,15 @@ set(LIB_SOURCES
 
    src/VulkanInitializers.cpp
    src/PipelineBuilder.cpp
+   src/RenderPipelineLayout.cpp
+   src/RenderPipeline.cpp
    src/VertexBufferParamsBuilder.cpp
-   src/Shader.cpp
+   
+   src/Shader/Shader.cpp
+   src/Shader/Reflection/ShaderResource.cpp
+   src/Shader/Reflection/ShaderReflectionData.cpp
+   src/Shader/Reflection/ShaderReflector.cpp
+   src/Shader/RasterizationShaderProgram.cpp
 
    src/Color32.cpp
 )
@@ -97,10 +111,20 @@ set(LIB_HEADERS
    include/velecs/graphics/Memory/UploadContext.hpp
 
    include/velecs/graphics/VulkanInitializers.hpp
+   include/velecs/graphics/RenderPipelineLayout.hpp
+   include/velecs/graphics/RenderPipeline.hpp
    include/velecs/graphics/PipelineBuilder.hpp
    include/velecs/graphics/VertexBufferParamsBuilder.hpp
    include/velecs/graphics/Vertex.hpp
+
    include/velecs/graphics/Shader.hpp
+   include/velecs/graphics/Shader/Shader.hpp
+   include/velecs/graphics/Shader/IShaderProgram.hpp
+   include/velecs/graphics/Shader/RasterizationShaderProgram.hpp
+   include/velecs/graphics/Shader/Reflection/ShaderResourceType.hpp
+   include/velecs/graphics/Shader/Reflection/ShaderResource.hpp
+   include/velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp
+   include/velecs/graphics/Shader/Reflection/ShaderReflector.hpp
 
    include/velecs/graphics/Rect.hpp
    include/velecs/graphics/Color32.hpp
@@ -121,6 +145,7 @@ target_link_libraries(velecs-graphics
    PUBLIC vma
    PUBLIC volk
    PUBLIC vk-bootstrap::vk-bootstrap
+   PUBLIC spirv_cross
    PUBLIC velecs-common
    PUBLIC velecs-math
    PUBLIC velecs-ecs
