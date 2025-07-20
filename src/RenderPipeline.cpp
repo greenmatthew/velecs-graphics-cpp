@@ -233,7 +233,7 @@ void RenderPipeline::SetDefaultValues()
     // Rasterization - filled triangles, no culling, counter-clockwise front face
     _rasterizer = VkExtRasterizationStateCreateInfo(
         VK_POLYGON_MODE_FILL,           // Fill triangles (not wireframe)
-        VK_CULL_MODE_NONE,              // No culling (render both sides)
+        VK_CULL_MODE_BACK_BIT,          // Cull back faces (standard for 3D)
         VK_FRONT_FACE_COUNTER_CLOCKWISE // Standard winding order
     );
 
