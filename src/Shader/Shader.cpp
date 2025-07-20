@@ -98,18 +98,6 @@ Shader& Shader::Reload()
 
 // Private Methods
 
-void Shader::BuildFromFile()
-{
-    if (_relPath.empty())
-    {
-        throw std::runtime_error("Cannot build shader from file: no file path provided");
-    }
-
-    std::vector<uint32_t> spirvCode = LoadSpirVFromFile(_relPath);
-    _module = CreateModuleFromCode(spirvCode);
-    _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module);
-}
-
 void Shader::BuildFromCode()
 {
     if (_spirvCode.empty())
@@ -119,6 +107,17 @@ void Shader::BuildFromCode()
 
     _module = CreateModuleFromCode(_spirvCode);
     _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module);
+}
+
+void Shader::BuildFromFile()
+{
+    if (_relPath.empty())
+    {
+        throw std::runtime_error("Cannot build shader from file: no file path provided");
+    }
+
+    _spirvCode = LoadSpirVFromFile(_relPath);
+    BuildFromCode();
 }
 
 VkShaderModule Shader::CreateModuleFromCode(const std::vector<uint32_t>& spirvCode)

@@ -90,6 +90,19 @@ public:
 
     // Public Methods
 
+    /// @brief Creates a shader from SPIR-V bytecode
+    /// @param device The Vulkan device handle
+    /// @param stage The shader stage type
+    /// @param spirvCode The compiled SPIR-V bytecode
+    /// @param entryPoint The entry point function name (default: "main")
+    /// @return Unique pointer to the created shader
+    static std::unique_ptr<Shader> FromCode(
+        VkDevice device,
+        VkShaderStageFlagBits stage,
+        const std::vector<uint32_t>& spirvCode,
+        const std::string& entryPoint = "main"
+    );
+
     /// @brief Creates a shader from a SPIR-V file in the assets directory
     /// @param device The Vulkan device handle
     /// @param stage The shader stage type
@@ -101,19 +114,6 @@ public:
         VkDevice device,
         VkShaderStageFlagBits stage,
         const std::filesystem::path& relPath,
-        const std::string& entryPoint = "main"
-    );
-
-    /// @brief Creates a shader from SPIR-V bytecode
-    /// @param device The Vulkan device handle
-    /// @param stage The shader stage type
-    /// @param spirvCode The compiled SPIR-V bytecode
-    /// @param entryPoint The entry point function name (default: "main")
-    /// @return Unique pointer to the created shader
-    static std::unique_ptr<Shader> FromCode(
-        VkDevice device,
-        VkShaderStageFlagBits stage,
-        const std::vector<uint32_t>& spirvCode,
         const std::string& entryPoint = "main"
     );
 
@@ -132,6 +132,10 @@ public:
     /// @brief Gets the relative file path
     /// @return The file path relative to the assets directory (empty if created from code)
     inline const std::filesystem::path& GetFilePath() const { return _relPath; }
+
+    /// @brief Gets the SPIR-V bytecode
+    /// @return Reference to the SPIR-V code
+    const std::vector<uint32_t>& GetSpirVCode() const { return _spirvCode; }
 
     /// @brief Gets the entry point function name
     /// @return The entry point name
@@ -162,17 +166,17 @@ private:
     VkShaderStageFlagBits _stage{};                      /// @brief The shader stage type
     std::filesystem::path _relPath;                      /// @brief File path relative to `Paths::AssetsDir()`
     std::string _entryPoint;                             /// @brief Entry point function name
-    std::vector<uint32_t> _spirvCode;                    /// @brief SPIR-V bytecode (stored if created from code)
+    std::vector<uint32_t> _spirvCode;                    /// @brief SPIR-V bytecode
     VkShaderModule _module{VK_NULL_HANDLE};              /// @brief The compiled shader module
     VkPipelineShaderStageCreateInfo _stageCreateInfo{};  /// @brief Pipeline stage create info
 
     // Private Methods
 
-    /// @brief Builds shader module from file (called during construction)
-    void BuildFromFile();
-
     /// @brief Builds shader module from stored code (called during construction)
     void BuildFromCode();
+
+    /// @brief Builds shader module from file (called during construction)
+    void BuildFromFile();
 
     /// @brief Creates a Vulkan shader module from SPIR-V bytecode
     /// @param spirvCode The SPIR-V bytecode

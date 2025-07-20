@@ -12,8 +12,11 @@
 
 #include "velecs/graphics/VulkanInitializers.hpp"
 #include "velecs/graphics/PipelineBuilder.hpp"
+#include "velecs/graphics/RenderPipelineLayout.hpp"
+#include "velecs/graphics/RenderPipeline.hpp"
 #include "velecs/graphics/Vertex.hpp"
 #include "velecs/graphics/Shader.hpp"
+#include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -495,7 +498,24 @@ bool RenderEngine::InitSyncStructures()
 
 bool RenderEngine::InitPipelines()
 {
-    Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "shader/test.vert.spv");
+    RasterizationShaderProgram program{};
+    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/test.vert.spv");
+    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/test.frag.spv");
+
+    // Material mat{};
+    // mat.shaderProgram = program;
+    // mat.fields == ShaderReflector::Merge(ShaderReflector::Reflect(program.vert + program.frag + ...));
+
+    RenderPipelineLayout pipelineLayout{};
+    pipelineLayout.SetDevice(_device);
+
+    RenderPipeline pipeline{};
+    pipeline.SetDevice(_device)
+        .SetRenderPass(_renderPass)
+        .SetViewport(GetWindowExtent())
+        .SetPipelineLayout(pipelineLayout.GetLayout())
+        .SetVertexInput(Vertex::GetVertexInputInfo())
+        ;
 
     // //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
     // PipelineBuilder pipelineBuilder;
