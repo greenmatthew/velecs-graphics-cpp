@@ -37,22 +37,24 @@ VertexBufferParamsBuilder& VertexBufferParamsBuilder::AddBinding(
     return *this;
 }
 
-VkPipelineVertexInputStateCreateInfo VertexBufferParamsBuilder::GetCreateInfo()
+const VkPipelineVertexInputStateCreateInfo& VertexBufferParamsBuilder::GetCreateInfo() const
 {
-    VkPipelineVertexInputStateCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    info.pNext = nullptr;
-    // "`flags` is reserved for future use." according to the Vulkan spec:
-    // https://registry.khronos.org/vulkan/specs/latest/man/html/VkPipelineVertexInputStateCreateInfo.html
-    info.flags = 0;
+    if (!_createInfoValid) {
+        _createInfo = {};
+        _createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        _createInfo.pNext = nullptr;
+        _createInfo.flags = 0;
+        
+        _createInfo.pVertexBindingDescriptions = _bindings.data();
+        _createInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(_bindings.size());
+        
+        _createInfo.pVertexAttributeDescriptions = _attributes.data();
+        _createInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(_attributes.size());
+        
+        _createInfoValid = true;
+    }
     
-    info.pVertexBindingDescriptions = _bindings.data();
-    info.vertexBindingDescriptionCount = static_cast<uint32_t>(_bindings.size());
-    
-    info.pVertexAttributeDescriptions = _attributes.data();
-    info.vertexAttributeDescriptionCount = static_cast<uint32_t>(_attributes.size());
-    
-    return info;
+    return _createInfo;
 }
 
 // Protected Fields

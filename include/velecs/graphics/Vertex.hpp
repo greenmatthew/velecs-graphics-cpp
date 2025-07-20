@@ -27,14 +27,14 @@ struct Vertex {
     Vec3 pos;      // location 0
     Color32 color; // location 1
 
-    inline static VkPipelineVertexInputStateCreateInfo GetVertexInputInfo() {
-        static const auto createInfo = VertexBufferParamsBuilder()
+    static const VkPipelineVertexInputStateCreateInfo& GetVertexInputInfo() {
+        static const auto builder = VertexBufferParamsBuilder()
             .AddBinding(sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX, [](auto& binding) {
                 binding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos))
                        .AddAttribute(VK_FORMAT_B8G8R8A8_SRGB, offsetof(Vertex, color));
-            })
-            .GetCreateInfo();
-        return createInfo;
+            });
+        
+        return builder.GetCreateInfo(); // Now returns const reference to persistent data
     }
 };
 

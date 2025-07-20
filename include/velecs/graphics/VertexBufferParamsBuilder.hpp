@@ -98,7 +98,7 @@ public:
         BindingConfigurator configurator
     );
 
-    VkPipelineVertexInputStateCreateInfo GetCreateInfo();
+    const VkPipelineVertexInputStateCreateInfo& GetCreateInfo() const;
 
 protected:
     // Protected Fields
@@ -111,6 +111,10 @@ private:
     std::vector<VkVertexInputBindingDescription> _bindings;
     std::vector<VkVertexInputAttributeDescription> _attributes;
     uint32_t _location{0U};
+
+    // Mutable so we can modify it in const method
+    mutable VkPipelineVertexInputStateCreateInfo _createInfo{};
+    mutable bool _createInfoValid{false};
 
     // Private Methods
 };
