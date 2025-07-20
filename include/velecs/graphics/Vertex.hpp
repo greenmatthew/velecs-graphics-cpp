@@ -31,7 +31,7 @@ struct Vertex {
         static const auto builder = VertexBufferParamsBuilder()
             .AddBinding(sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX, [](auto& binding) {
                 binding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos))
-                       .AddAttribute(VK_FORMAT_B8G8R8A8_SRGB, offsetof(Vertex, color));
+                       .AddAttribute(VK_FORMAT_R8G8B8A8_UNORM, offsetof(Vertex, color));
             });
         
         return builder.GetCreateInfo(); // Now returns const reference to persistent data
