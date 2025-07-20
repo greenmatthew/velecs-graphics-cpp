@@ -25,7 +25,7 @@ namespace velecs::graphics {
 ///
 /// Rest of description.
 template<typename VertexType, typename IndexType>
-class Mesh : MeshBase {
+class Mesh : public MeshBase {
 public:
     // Enums
 
@@ -49,24 +49,56 @@ public:
 
     // Public Methods
 
-    // @brief Sets vertex data and marks mesh as dirty.
+    /// @brief Sets vertex data and marks mesh as dirty.
     /// @param verts Vector of vertices to copy
     /// @details Replaces existing vertex data. Call Upload() to sync with GPU.
-    void SetVertices(const std::vector<VertexType>& verts);
+    void SetVertices(const std::vector<VertexType>& verts)
+    {
+        vertices = verts;
+        MarkDirty();
+    }
+
+    /// @brief Sets vertex data and marks mesh as dirty (move version).
+    /// @param verts Vector of vertices to move
+    /// @details Replaces existing vertex data efficiently. Call Upload() to sync with GPU.
+    void SetVertices(std::vector<VertexType>&& verts)
+    {
+        vertices = std::move(verts);
+        MarkDirty();
+    }
 
     /// @brief Sets index data and marks mesh as dirty.
-    /// @param idx Vector of indices to copy
+    /// @param indices Vector of indices to copy
     /// @details Replaces existing index data. Call Upload() to sync with GPU.
-    void SetIndices(const std::vector<IndexType>& idx);
+    void SetIndices(const std::vector<IndexType>& indices)
+    {
+        this->indices = indices;
+        MarkDirty();
+    }
 
-    /// @brief Adds a single vertex to the mesh.
-    /// @param vertex The vertex to add
-    /// @details Useful for procedural generation. Marks mesh as dirty.
-    void AddVertex(const VertexType& vertex);
+    /// @brief Sets index data and marks mesh as dirty (move version).
+    /// @param idx Vector of indices to move
+    /// @details Replaces existing index data efficiently. Call Upload() to sync with GPU.
+    void SetIndices(std::vector<IndexType>&& idx)
+    {
+        indices = std::move(idx);
+        MarkDirty();
+    }
 
     /// @brief Reserves space for vertices to avoid reallocations.
     /// @param count Number of vertices to reserve space for
-    void ReserveVertices(size_t count);
+    void ReserveVertices(const size_t count)
+    {
+        vertices.reserve(count);
+    }
+
+    /// @brief Reserves space for indices to avoid reallocations.
+    /// @param count Number of indices to reserve space for
+    /// @details Useful when building index data procedurally.
+    void ReserveIndices(const size_t count)
+    {
+        indices.reserve(count);
+    }
 
     /// @brief Loads mesh data from a file, replacing existing data.
     /// @param filePath Path to the mesh file (supports formats: .obj, .fbx, .gltf, .dae, etc.)
@@ -81,7 +113,14 @@ public:
     /// @param meshIndex Index of mesh to load from multi-mesh files (default: 0)
     /// @return Unique pointer to loaded mesh, or nullptr on failure
     /// @details Convenience method for creating and loading in one step.
-    static std::unique_ptr<Mesh> CreateFrom(const std::filesystem::path& filePath, uint32_t meshIndex = 0);
+    static std::unique_ptr<Mesh> CreateFrom(const std::filesystem::path& filePath, uint32_t meshIndex = 0)
+    {
+        auto mesh = std::make_unique<Mesh>();
+        if (!mesh->LoadFrom(filePath, meshIndex)) {
+            return nullptr;  // Return null on failure
+        }
+        return mesh;
+    }
 
     /// @brief Loads all meshes from a multi-mesh file.
     /// @param filePath Path to the mesh file
@@ -92,22 +131,39 @@ public:
     /// @brief Gets direct access to vertex data.
     /// @return Const reference to vertex vector
     /// @details Use carefully - modifying through non-const access requires calling MarkDirty().
-    const std::vector<VertexType>& GetVertices() const { return vertices; }
+    inline const std::vector<VertexType>& GetVertices() const { return vertices; }
 
     /// @brief Gets direct access to index data.
     /// @return Const reference to index vector
-    const std::vector<IndexType>& GetIndices() const { return indices; }
+    inline const std::vector<IndexType>& GetIndices() const { return indices; }
 
     /// @brief Checks if mesh has index data.
     /// @return True if mesh uses indexed rendering
-    bool IsIndexed() const { return !indices.empty(); }
+    inline bool IsIndexed() const { return !indices.empty(); }
 
     // MeshBase interface implementation
     void Upload(VkDevice device, VmaAllocator allocator) override;
     void Draw(VkCommandBuffer cmd) override;
     VkPipelineVertexInputStateCreateInfo GetVertexInputInfo() const override;
-    uint32_t GetVertexCount() const override;
-    uint32_t GetPrimitiveCount() const override;
+    
+    inline uint32_t GetVertexCount() const override { return vertices.size(); }
+
+    /// @brief Gets the total number of indices in this mesh.
+    /// @return Number of indices (0 for non-indexed meshes)
+    /// @details Useful for debugging and buffer size calculations.
+    inline uint32_t GetIndexCount() const { return indices.size(); }
+    
+    /// @brief Gets the number of primitives (triangles, lines, points) in this mesh.
+    /// @return Number of primitives that will be rendered
+    /// @details Used for performance profiling and statistics gathering.
+    ///          Assumes triangle primitives (divides by 3).
+    uint32_t GetPrimitiveCount() const override
+    { 
+        if (IsIndexed()) {
+            return static_cast<uint32_t>(indices.size() / 3);  // Triangles from indices
+        }
+        return static_cast<uint32_t>(vertices.size() / 3);     // Triangles from vertices
+    }
 
 protected:
     // Protected Fields
