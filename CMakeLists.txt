@@ -88,6 +88,8 @@ set(LIB_SOURCES
    src/RenderPipelineLayout.cpp
    src/RenderPipeline.cpp
    src/VertexBufferParamsBuilder.cpp
+
+   src/Mesh.cpp
    
    src/Shader/Shader.cpp
    src/Shader/Reflection/ShaderResource.cpp
@@ -116,6 +118,8 @@ set(LIB_HEADERS
    include/velecs/graphics/PipelineBuilder.hpp
    include/velecs/graphics/VertexBufferParamsBuilder.hpp
    include/velecs/graphics/Vertex.hpp
+   include/velecs/graphics/MeshBase.hpp
+   include/velecs/graphics/Mesh.hpp
 
    include/velecs/graphics/Shader.hpp
    include/velecs/graphics/Shader/Shader.hpp
