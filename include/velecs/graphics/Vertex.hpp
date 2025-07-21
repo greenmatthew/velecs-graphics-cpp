@@ -24,8 +24,8 @@ namespace velecs::graphics {
 struct Vertex {
     using Vec3 = velecs::math::Vec3;
 
-    Vec3 pos;      // location 0
-    Color32 color; // location 1
+    Vec3 pos{Vec3::ZERO};            // location 0
+    Color32 color{Color32::MAGENTA}; // location 1
 
     static const VkPipelineVertexInputStateCreateInfo& GetVertexInputInfo() {
         static const auto builder = VertexBufferParamsBuilder()

@@ -56,6 +56,26 @@ target_link_libraries(spirv_cross INTERFACE
     $<$<CONFIG:Release>:${VULKAN_SDK_PATH}/Lib/spirv-cross-core.lib>
 )
 
+# Configure Assimp options BEFORE adding the subdirectory
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build Assimp as static library")
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Don't build assimp tools")
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "Don't build assimp samples") 
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Don't build assimp tests")
+set(ASSIMP_INSTALL OFF CACHE BOOL "Don't install assimp")
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "Don't treat warnings as errors")
+set(ASSIMP_INJECT_DEBUG_POSTFIX ON CACHE BOOL "Add 'd' postfix to debug builds")
+
+# Graphics engine specific options
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "Build import-only version (smaller)")
+set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "Build assimp's own zlib")
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "Don't build exporters")
+
+# Add Assimp
+add_subdirectory(libs/assimp)
+
+# Restore BUILD_SHARED_LIBS to not affect other libraries
+set(BUILD_SHARED_LIBS OFF)
+
 # Future external dependencies can be added here:
 # add_subdirectory(libs/imgui)         # For UI later
 # add_subdirectory(libs/imgui_guizo)   # For UI later
@@ -93,7 +113,7 @@ set(LIB_SOURCES
    src/VertexBufferParamsBuilder.cpp
 
    src/Mesh.cpp
-   
+
    src/Shader/Shader.cpp
    src/Shader/Reflection/ShaderResource.cpp
    src/Shader/Reflection/ShaderReflectionData.cpp
@@ -120,7 +140,9 @@ set(LIB_HEADERS
    include/velecs/graphics/RenderPipeline.hpp
    include/velecs/graphics/PipelineBuilder.hpp
    include/velecs/graphics/VertexBufferParamsBuilder.hpp
+   
    include/velecs/graphics/Vertex.hpp
+
    include/velecs/graphics/MeshBase.hpp
    include/velecs/graphics/Mesh.hpp
 
@@ -153,6 +175,7 @@ target_link_libraries(velecs-graphics
    PUBLIC volk
    PUBLIC vk-bootstrap::vk-bootstrap
    PUBLIC spirv_cross
+   PUBLIC assimp
    PUBLIC velecs-common
    PUBLIC velecs-math
    PUBLIC velecs-ecs

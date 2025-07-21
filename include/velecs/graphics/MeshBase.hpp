@@ -56,12 +56,12 @@ public:
     /// @brief Gets the total number of vertices in this mesh.
     /// @return Number of vertices (0 for vertex-less meshes)
     /// @details Used for debugging, validation, and draw call optimization.
-    virtual uint32_t GetVertexCount() const = 0;
+    virtual size_t GetVertexCount() const = 0;
     
     /// @brief Gets the number of primitives (triangles, lines, points) in this mesh.
     /// @return Number of primitives that will be rendered
     /// @details Used for performance profiling and statistics gathering.
-    virtual uint32_t GetPrimitiveCount() const = 0;
+    virtual size_t GetPrimitiveCount() const = 0;
 
 protected:
     // Protected Fields

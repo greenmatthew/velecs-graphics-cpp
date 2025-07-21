@@ -15,6 +15,8 @@
 #include "velecs/graphics/Memory/AllocatedImage.hpp"
 #include "velecs/graphics/Memory/AllocatedBuffer.hpp"
 
+#include "velecs/graphics/Mesh.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vma/vk_mem_alloc.h>
@@ -23,6 +25,7 @@
 #include <SDL3/SDL_vulkan.h>
 
 #include <optional>
+#include <memory>
 
 namespace velecs::graphics {
 
@@ -114,8 +117,8 @@ private:
     VkDescriptorPool imguiPool{VK_NULL_HANDLE};
 
 
-
     // These fields should be better handled
+    std::unique_ptr<Mesh> _testMesh{nullptr};
     AllocatedBuffer _triangleVertexBuffer{VK_NULL_HANDLE};
     AllocatedBuffer _triangleIndexBuffer{VK_NULL_HANDLE};
     VkPipeline _vertexColorsPipeline{VK_NULL_HANDLE};

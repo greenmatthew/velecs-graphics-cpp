@@ -15,6 +15,7 @@
 #include "velecs/graphics/RenderPipelineLayout.hpp"
 #include "velecs/graphics/RenderPipeline.hpp"
 #include "velecs/graphics/Vertex.hpp"
+#include "velecs/graphics/Mesh.hpp"
 #include "velecs/graphics/Shader.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 
@@ -53,6 +54,8 @@ SDL_AppResult RenderEngine::Init()
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     CreateTriangleBuffers();
+
+    _testMesh = std::move(Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj"));
     
     return SDL_APP_CONTINUE;
 }
