@@ -101,6 +101,27 @@ std::vector<std::unique_ptr<Mesh>> Mesh::CreateAllFrom(const std::filesystem::pa
     return meshes;
 }
 
+void Mesh::UploadImmediately(
+    VkDevice device,
+    VmaAllocator allocator,
+    std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
+)
+{
+    vertexBuffer = AllocatedBuffer::CreateImmediately(
+        allocator,
+        vertices,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        immediateSubmit
+    );
+
+    indexBuffer = AllocatedBuffer::CreateImmediately(
+        allocator,
+        indices,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        immediateSubmit
+    );
+}
+
 void Mesh::Upload(VkDevice device, VmaAllocator allocator)
 {
 

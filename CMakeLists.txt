@@ -104,6 +104,7 @@ endif()
 set(LIB_SOURCES
    src/RenderEngine.cpp
 
+   src/Memory/AllocatedBuffer.cpp
    src/Memory/DeletionQueue.cpp
 
    src/VulkanInitializers.cpp

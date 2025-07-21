@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include <sstream>
+#include <functional>
 
 namespace velecs::graphics {
 
@@ -130,6 +131,12 @@ public:
     inline bool IsIndexed() const { return !indices.empty(); }
 
     // MeshBase interface implementation
+    void UploadImmediately(
+        VkDevice device,
+        VmaAllocator allocator,
+        std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
+    );
+
     void Upload(VkDevice device, VmaAllocator allocator) override;
 
     void Draw(VkCommandBuffer cmd) override;
@@ -159,10 +166,10 @@ protected:
     std::vector<uint32_t> indices;
     
     /// @brief GPU vertex buffer.
-    AllocatedBuffer vertexBuffer;
+    std::unique_ptr<AllocatedBuffer> vertexBuffer{nullptr};
     
     /// @brief GPU index buffer.
-    AllocatedBuffer indexBuffer;
+    std::unique_ptr<AllocatedBuffer> indexBuffer{nullptr};
 
     // Protected Methods
 

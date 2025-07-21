@@ -55,7 +55,12 @@ SDL_AppResult RenderEngine::Init()
 
     CreateTriangleBuffers();
 
-    _testMesh = std::move(Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj"));
+    _testMesh = Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj");
+    _testMesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
+        ImmediateSubmit(std::move(func));
+    });
+    // _testVertexBuffer = AllocatedBuffer::CreateImmediately(_allocator, _testMesh->GetVertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &ImmediateSubmit);
+    // _testIndicesBuffer = AllocatedBuffer::CreateImmediately(_allocator, _testMesh->GetIndices(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &ImmediateSubmit);
     
     return SDL_APP_CONTINUE;
 }
@@ -66,30 +71,32 @@ void RenderEngine::Draw()
 
     vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
 
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    auto windowExtent = GetWindowExtent();
-    viewport.width = static_cast<float>(windowExtent.width);
-    viewport.height = static_cast<float>(windowExtent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    // VkViewport viewport = {};
+    // viewport.x = 0.0f;
+    // viewport.y = 0.0f;
+    // auto windowExtent = GetWindowExtent();
+    // viewport.width = static_cast<float>(windowExtent.width);
+    // viewport.height = static_cast<float>(windowExtent.height);
+    // viewport.minDepth = 0.0f;
+    // viewport.maxDepth = 1.0f;
 
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
+    // VkRect2D scissor = {};
+    // scissor.offset = {0, 0};
+    // scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
 
-    vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
+    // vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
+    // vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
-    //bind the mesh vertex buffer with offset 0
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(_mainCommandBuffer, 0, 1, &_triangleVertexBuffer._buffer, &offset);
+    // //bind the mesh vertex buffer with offset 0
+    // VkDeviceSize offset = 0;
+    // vkCmdBindVertexBuffers(_mainCommandBuffer, 0, 1, &_triangleVertexBuffer._buffer, &offset);
 
-    vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT16);
+    // vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    //we can now draw the mesh
-    vkCmdDrawIndexed(_mainCommandBuffer, (uint32_t)3, 1, 0, 0, 0);
+    // //we can now draw the mesh
+    // vkCmdDrawIndexed(_mainCommandBuffer, (uint32_t)3, 1, 0, 0, 0);
+
+    // _testMesh->Draw(...);
 
     PostDraw();
 }
@@ -769,18 +776,18 @@ void RenderEngine::CreateTriangleBuffers()
     std::vector<uint16_t> indices = {0, 2, 1};
 
     
-    // Create buffers with error handling
-    auto vertexBufferOpt = CreateBuffer(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    if (!vertexBufferOpt.has_value()) {
-        throw std::runtime_error("Failed to create vertex buffer");
-    }
-    _triangleVertexBuffer = vertexBufferOpt.value();
+    // // Create buffers with error handling
+    // auto vertexBufferOpt = CreateBuffer(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    // if (!vertexBufferOpt.has_value()) {
+    //     throw std::runtime_error("Failed to create vertex buffer");
+    // }
+    // _triangleVertexBuffer = vertexBufferOpt.value();
     
-    auto indexBufferOpt = CreateBuffer(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    if (!indexBufferOpt.has_value()) {
-        throw std::runtime_error("Failed to create index buffer");
-    }
-    _triangleIndexBuffer = indexBufferOpt.value();
+    // auto indexBufferOpt = CreateBuffer(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    // if (!indexBufferOpt.has_value()) {
+    //     throw std::runtime_error("Failed to create index buffer");
+    // }
+    // _triangleIndexBuffer = indexBufferOpt.value();
 }
 
 void RenderEngine::PreDraw()
