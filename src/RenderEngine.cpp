@@ -53,7 +53,7 @@ SDL_AppResult RenderEngine::Init()
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
-    _testMesh = Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj");
+    _testMesh = Mesh::CreateFrom("internal/meshes/equilateral_triangle.obj");
     
     return SDL_APP_CONTINUE;
 }
@@ -544,8 +544,8 @@ bool RenderEngine::InitPipelines()
     // mat.fields == ShaderReflector::Merge(ShaderReflector::Reflect(program.vert + program.frag + ...));
 
     RasterizationShaderProgram vertexColorsProgram{};
-    vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/vertex_colors.vert.spv");
-    vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/vertex_colors.frag.spv");
+    vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/vertex_colors.vert.spv");
+    vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/vertex_colors.frag.spv");
 
     RenderPipelineLayout pipelineLayout{};
     pipelineLayout.SetDevice(_device);
