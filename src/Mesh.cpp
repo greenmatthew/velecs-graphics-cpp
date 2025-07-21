@@ -129,7 +129,12 @@ void Mesh::Upload(VkDevice device, VmaAllocator allocator)
 
 void Mesh::Draw(VkCommandBuffer cmd)
 {
-
+    // Bind vertex buffer
+    VkDeviceSize offset = 0;
+    const VkBuffer vertexBuf = vertexBuffer->GetBuffer();
+    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuf, &offset);
+    vkCmdBindIndexBuffer(cmd, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 }
 
 VkPipelineVertexInputStateCreateInfo Mesh::GetVertexInputInfo() const
@@ -174,11 +179,11 @@ std::unique_ptr<Assimp::Importer> Mesh::AssimpLoadScene(const std::filesystem::p
     
     // Set import flags - these are common for graphics engines
     unsigned int importFlags = 
-        aiProcess_Triangulate |         // Convert to triangles
-        aiProcess_GenNormals |          // Generate normals if missing
-        aiProcess_CalcTangentSpace |    // Calculate tangents for normal mapping
-        aiProcess_OptimizeMeshes |      // Reduce number of meshes
-        aiProcess_JoinIdenticalVertices // Remove duplicate vertices
+        aiProcess_Triangulate           | // Convert to triangles
+        aiProcess_GenNormals            | // Generate normals if missing
+        aiProcess_CalcTangentSpace      | // Calculate tangents for normal mapping
+        aiProcess_OptimizeMeshes        | // Reduce number of meshes
+        aiProcess_JoinIdenticalVertices   // Remove duplicate vertices
         ;
     
     // Load the scene
@@ -216,7 +221,7 @@ void Mesh::LoadFromAssimpMesh(const aiMesh* assimpMesh)
         // Position (required)
         vertex.pos = Vec3{
             assimpMesh->mVertices[i].x,
-            assimpMesh->mVertices[i].y,
+            -(assimpMesh->mVertices[i].y), // Flip y-axis (conversion from OpenGL to Vulkan coordinate system)
             assimpMesh->mVertices[i].z
         };
         

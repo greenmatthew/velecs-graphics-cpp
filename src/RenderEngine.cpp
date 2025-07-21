@@ -53,14 +53,19 @@ SDL_AppResult RenderEngine::Init()
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
-    CreateTriangleBuffers();
-
     _testMesh = Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj");
-    _testMesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
-        ImmediateSubmit(std::move(func));
-    });
-    // _testVertexBuffer = AllocatedBuffer::CreateImmediately(_allocator, _testMesh->GetVertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, &ImmediateSubmit);
-    // _testIndicesBuffer = AllocatedBuffer::CreateImmediately(_allocator, _testMesh->GetIndices(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, &ImmediateSubmit);
+    if (_testMesh) {
+        std::cout << "Mesh loaded: " << _testMesh->GetVertexCount() << " vertices, " 
+                << _testMesh->GetIndexCount() << " indices" << std::endl;
+        
+        // Print first vertex to see what we got
+        if (!_testMesh->GetVertices().empty()) {
+            const auto& firstVertex = _testMesh->GetVertices()[0];
+            std::cout << "First vertex pos: (" << firstVertex.pos.x << ", " 
+                    << firstVertex.pos.y << ", " << firstVertex.pos.z << ")" << std::endl;
+            std::cout << "First vertex color: " << firstVertex.color.ToString() << std::endl;
+        }
+    }
     
     return SDL_APP_CONTINUE;
 }
@@ -71,32 +76,30 @@ void RenderEngine::Draw()
 
     vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
 
-    // VkViewport viewport = {};
-    // viewport.x = 0.0f;
-    // viewport.y = 0.0f;
-    // auto windowExtent = GetWindowExtent();
-    // viewport.width = static_cast<float>(windowExtent.width);
-    // viewport.height = static_cast<float>(windowExtent.height);
-    // viewport.minDepth = 0.0f;
-    // viewport.maxDepth = 1.0f;
+    if (_testMesh->IsDirty())
+    {
+        _testMesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
+            ImmediateSubmit(std::move(func));
+        });
+    }
 
-    // VkRect2D scissor = {};
-    // scissor.offset = {0, 0};
-    // scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    auto windowExtent = GetWindowExtent();
+    viewport.width = static_cast<float>(windowExtent.width);
+    viewport.height = static_cast<float>(windowExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
 
-    // vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
-    // vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
+    VkRect2D scissor = {};
+    scissor.offset = {0, 0};
+    scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
 
-    // //bind the mesh vertex buffer with offset 0
-    // VkDeviceSize offset = 0;
-    // vkCmdBindVertexBuffers(_mainCommandBuffer, 0, 1, &_triangleVertexBuffer._buffer, &offset);
+    vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
+    vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
-    // vkCmdBindIndexBuffer(_mainCommandBuffer, _triangleIndexBuffer._buffer, 0, VK_INDEX_TYPE_UINT16);
-
-    // //we can now draw the mesh
-    // vkCmdDrawIndexed(_mainCommandBuffer, (uint32_t)3, 1, 0, 0, 0);
-
-    // _testMesh->Draw(...);
+    _testMesh->Draw(_mainCommandBuffer);
 
     PostDraw();
 }
@@ -567,6 +570,7 @@ bool RenderEngine::InitPipelines()
         .SetVertexInput(Vertex::GetVertexInputInfo())
         .AddShader(*vertexColorsProgram.vert)
         .AddShader(*vertexColorsProgram.frag)
+        .SetCullMode(VK_CULL_MODE_NONE)
         ;
     _vertexColorsPipeline = pipeline.GetPipeline();
 

@@ -63,14 +63,14 @@ public:
     /// @details Used for performance profiling and statistics gathering.
     virtual size_t GetPrimitiveCount() const = 0;
 
+    /// @brief Checks if mesh data has changed and needs re-upload.
+    /// @return True if mesh needs to be uploaded to GPU
+    inline bool IsDirty() const { return _isDirty; }
+
 protected:
     // Protected Fields
 
     // Protected Methods
-
-    /// @brief Checks if mesh data has changed and needs re-upload.
-    /// @return True if mesh needs to be uploaded to GPU
-    inline bool IsDirty() const { return _isDirty; }
 
     /// @brief Marks mesh data as changed, requiring GPU re-upload.
     /// @details Call this whenever CPU-side mesh data is modified.

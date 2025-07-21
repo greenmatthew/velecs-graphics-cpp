@@ -11,6 +11,7 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+
 #include <vma/vk_mem_alloc.h>
 
 #include <memory>
@@ -144,6 +145,7 @@ private:
     VkBuffer _buffer{VK_NULL_HANDLE};           /// @brief Vulkan buffer handle
     VmaAllocation _allocation{VK_NULL_HANDLE};  /// @brief VMA allocation handle
     VmaAllocator _allocator{VK_NULL_HANDLE};    /// @brief VMA allocator handle
+    VkBufferUsageFlags _bufferType = 0;
 
     // Private Methods
     
