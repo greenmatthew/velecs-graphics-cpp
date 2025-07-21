@@ -18,6 +18,12 @@
 #include "velecs/graphics/Mesh.hpp"
 #include "velecs/graphics/Shader.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
+#include "velecs/graphics/Components/MeshRenderer.hpp"
+
+#include <velecs/ecs/Components/Transform.hpp>
+
+#include <velecs/ecs/Entity.hpp>
+using namespace velecs::ecs;
 
 #include <iostream>
 #include <fstream>
@@ -53,8 +59,6 @@ SDL_AppResult RenderEngine::Init()
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
-    _testMesh = Mesh::CreateFrom("internal/meshes/equilateral_triangle.obj");
-    
     return SDL_APP_CONTINUE;
 }
 
@@ -63,13 +67,6 @@ void RenderEngine::Draw()
     PreDraw();
 
     vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
-
-    if (_testMesh->IsDirty())
-    {
-        _testMesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
-            ImmediateSubmit(std::move(func));
-        });
-    }
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -87,7 +84,20 @@ void RenderEngine::Draw()
     vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
-    _testMesh->Draw(_mainCommandBuffer);
+    auto& registry = Entity::GetRegistry();
+    auto view = registry.view<Transform, MeshRenderer>();
+    view.each([this](auto entity, Transform& transform, MeshRenderer& renderer) {
+        // Upload mesh if dirty
+        if (renderer.mesh->IsDirty())
+        {
+            renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
+                ImmediateSubmit(std::move(func));
+            });
+        }
+
+        // Draw the mesh
+        renderer.mesh->Draw(_mainCommandBuffer);
+    });
 
     PostDraw();
 }
