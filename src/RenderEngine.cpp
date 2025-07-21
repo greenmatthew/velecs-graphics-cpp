@@ -54,18 +54,6 @@ SDL_AppResult RenderEngine::Init()
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     _testMesh = Mesh::CreateFrom("Engine/meshes/equilateral_triangle.obj");
-    if (_testMesh) {
-        std::cout << "Mesh loaded: " << _testMesh->GetVertexCount() << " vertices, " 
-                << _testMesh->GetIndexCount() << " indices" << std::endl;
-        
-        // Print first vertex to see what we got
-        if (!_testMesh->GetVertices().empty()) {
-            const auto& firstVertex = _testMesh->GetVertices()[0];
-            std::cout << "First vertex pos: (" << firstVertex.pos.x << ", " 
-                    << firstVertex.pos.y << ", " << firstVertex.pos.z << ")" << std::endl;
-            std::cout << "First vertex color: " << firstVertex.color.ToString() << std::endl;
-        }
-    }
     
     return SDL_APP_CONTINUE;
 }
