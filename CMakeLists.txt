@@ -89,75 +89,84 @@ if(NOT VELECS_DEPS_LOADED)
 endif()
 
 if(NOT TARGET velecs-common)
-   add_subdirectory(../velecs-common ${CMAKE_BINARY_DIR}/velecs-common)
+    add_subdirectory(../velecs-common ${CMAKE_BINARY_DIR}/velecs-common)
 endif()
 
 if(NOT TARGET velecs-math)
-   add_subdirectory(../velecs-math ${CMAKE_BINARY_DIR}/velecs-math)
+    add_subdirectory(../velecs-math ${CMAKE_BINARY_DIR}/velecs-math)
 endif()
 
 if(NOT TARGET velecs-ecs)
-   add_subdirectory(../velecs-ecs ${CMAKE_BINARY_DIR}/velecs-ecs)
+    add_subdirectory(../velecs-ecs ${CMAKE_BINARY_DIR}/velecs-ecs)
 endif()
 
 # Source files for the library
 set(LIB_SOURCES
-   src/RenderEngine.cpp
+    src/RenderEngine.cpp
 
-   src/Memory/AllocatedBuffer.cpp
-   src/Memory/DeletionQueue.cpp
+    src/Memory/AllocatedBuffer.cpp
+    src/Memory/DeletionQueue.cpp
 
-   src/VulkanInitializers.cpp
-   src/PipelineBuilder.cpp
-   src/RenderPipelineLayout.cpp
-   src/RenderPipeline.cpp
-   src/VertexBufferParamsBuilder.cpp
+    src/VulkanInitializers.cpp
+    src/PipelineBuilder.cpp
+    src/RenderPipelineLayout.cpp
+    src/RenderPipeline.cpp
+    src/VertexBufferParamsBuilder.cpp
 
-   src/Mesh.cpp
+    src/Mesh.cpp
 
-   src/Shader/Shader.cpp
-   src/Shader/Reflection/ShaderResource.cpp
-   src/Shader/Reflection/ShaderReflectionData.cpp
-   src/Shader/Reflection/ShaderReflector.cpp
-   src/Shader/RasterizationShaderProgram.cpp
+    src/Components/Camera.cpp
+    src/Components/PerspectiveCamera.cpp
+    src/Components/OrthographicCamera.cpp
 
-   src/Color32.cpp
+    src/Shader/Shader.cpp
+    src/Shader/Reflection/ShaderResource.cpp
+    src/Shader/Reflection/ShaderReflectionData.cpp
+    src/Shader/Reflection/ShaderReflector.cpp
+    src/Shader/RasterizationShaderProgram.cpp
+
+    src/Color32.cpp
 )
 
 # Header files for the library (for IDE organization)  
 set(LIB_HEADERS
-   include/velecs/graphics/Common.hpp
+    include/velecs/graphics/Common.hpp
 
-   include/velecs/graphics/RenderEngine.hpp
-   
+    include/velecs/graphics/RenderEngine.hpp
 
-   include/velecs/graphics/Memory/AllocatedBuffer.hpp
-   include/velecs/graphics/Memory/AllocatedImage.hpp
-   include/velecs/graphics/Memory/DeletionQueue.hpp
-   include/velecs/graphics/Memory/UploadContext.hpp
 
-   include/velecs/graphics/VulkanInitializers.hpp
-   include/velecs/graphics/RenderPipelineLayout.hpp
-   include/velecs/graphics/RenderPipeline.hpp
-   include/velecs/graphics/PipelineBuilder.hpp
-   include/velecs/graphics/VertexBufferParamsBuilder.hpp
-   
-   include/velecs/graphics/Vertex.hpp
+    include/velecs/graphics/Memory/AllocatedBuffer.hpp
+    include/velecs/graphics/Memory/AllocatedImage.hpp
+    include/velecs/graphics/Memory/DeletionQueue.hpp
+    include/velecs/graphics/Memory/UploadContext.hpp
 
-   include/velecs/graphics/MeshBase.hpp
-   include/velecs/graphics/Mesh.hpp
+    include/velecs/graphics/VulkanInitializers.hpp
+    include/velecs/graphics/RenderPipelineLayout.hpp
+    include/velecs/graphics/RenderPipeline.hpp
+    include/velecs/graphics/PipelineBuilder.hpp
+    include/velecs/graphics/VertexBufferParamsBuilder.hpp
 
-   include/velecs/graphics/Shader.hpp
-   include/velecs/graphics/Shader/Shader.hpp
-   include/velecs/graphics/Shader/IShaderProgram.hpp
-   include/velecs/graphics/Shader/RasterizationShaderProgram.hpp
-   include/velecs/graphics/Shader/Reflection/ShaderResourceType.hpp
-   include/velecs/graphics/Shader/Reflection/ShaderResource.hpp
-   include/velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp
-   include/velecs/graphics/Shader/Reflection/ShaderReflector.hpp
+    include/velecs/graphics/Vertex.hpp
 
-   include/velecs/graphics/Rect.hpp
-   include/velecs/graphics/Color32.hpp
+    include/velecs/graphics/MeshBase.hpp
+    include/velecs/graphics/Mesh.hpp
+
+    include/velecs/graphics/Components/MeshRenderer.hpp
+    include/velecs/graphics/Components/Camera.hpp
+    include/velecs/graphics/Components/PerspectiveCamera.hpp
+    include/velecs/graphics/Components/OrthographicCamera.hpp
+
+    include/velecs/graphics/Shader.hpp
+    include/velecs/graphics/Shader/Shader.hpp
+    include/velecs/graphics/Shader/IShaderProgram.hpp
+    include/velecs/graphics/Shader/RasterizationShaderProgram.hpp
+    include/velecs/graphics/Shader/Reflection/ShaderResourceType.hpp
+    include/velecs/graphics/Shader/Reflection/ShaderResource.hpp
+    include/velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp
+    include/velecs/graphics/Shader/Reflection/ShaderReflector.hpp
+
+    include/velecs/graphics/Rect.hpp
+    include/velecs/graphics/Color32.hpp
 )
 
 # Always build the library
@@ -165,23 +174,23 @@ add_library(velecs-graphics ${LIB_SOURCES} ${LIB_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_include_directories(velecs-graphics
-   PUBLIC
-       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 target_link_libraries(velecs-graphics
-   PUBLIC SDL3::SDL3
-   PUBLIC Vulkan::Vulkan
-   PUBLIC vma
-   PUBLIC volk
-   PUBLIC vk-bootstrap::vk-bootstrap
-   PUBLIC spirv_cross
-   PUBLIC assimp
-   PUBLIC velecs-common
-   PUBLIC velecs-math
-   PUBLIC velecs-ecs
+    PUBLIC SDL3::SDL3
+    PUBLIC Vulkan::Vulkan
+    PUBLIC vma
+    PUBLIC volk
+    PUBLIC vk-bootstrap::vk-bootstrap
+    PUBLIC spirv_cross
+    PUBLIC assimp
+    PUBLIC velecs-common
+    PUBLIC velecs-math
+    PUBLIC velecs-ecs
 )
 
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-   set(VELECS_GRAPHICS_LIBRARIES velecs-graphics PARENT_SCOPE)
+set(VELECS_GRAPHICS_LIBRARIES velecs-graphics PARENT_SCOPE)
 endif()
