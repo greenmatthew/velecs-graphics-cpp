@@ -104,21 +104,30 @@ endif()
 set(LIB_SOURCES
     src/RenderEngine.cpp
 
+    # Vulkan Memory Management
     src/Memory/AllocatedBuffer.cpp
     src/Memory/DeletionQueue.cpp
 
+
+    # Render Pipeline
     src/VulkanInitializers.cpp
     src/PipelineBuilder.cpp
     src/RenderPipelineLayout.cpp
     src/RenderPipeline.cpp
     src/VertexBufferParamsBuilder.cpp
 
+
+    # Meshes
     src/Mesh.cpp
 
+
+    # Cameras
     src/Components/Camera.cpp
     src/Components/PerspectiveCamera.cpp
     src/Components/OrthographicCamera.cpp
 
+
+    # Shaders
     src/Shader/Shader.cpp
     src/Shader/Reflection/ShaderResource.cpp
     src/Shader/Reflection/ShaderReflectionData.cpp
@@ -135,27 +144,35 @@ set(LIB_HEADERS
     include/velecs/graphics/RenderEngine.hpp
 
 
+    # Vulkan Memory Management
     include/velecs/graphics/Memory/AllocatedBuffer.hpp
     include/velecs/graphics/Memory/AllocatedImage.hpp
     include/velecs/graphics/Memory/DeletionQueue.hpp
     include/velecs/graphics/Memory/UploadContext.hpp
 
+
+    # Render Pipeline
     include/velecs/graphics/VulkanInitializers.hpp
     include/velecs/graphics/RenderPipelineLayout.hpp
     include/velecs/graphics/RenderPipeline.hpp
     include/velecs/graphics/PipelineBuilder.hpp
     include/velecs/graphics/VertexBufferParamsBuilder.hpp
 
-    include/velecs/graphics/Vertex.hpp
 
+    # Meshes
+    include/velecs/graphics/Vertex.hpp
     include/velecs/graphics/MeshBase.hpp
     include/velecs/graphics/Mesh.hpp
-
     include/velecs/graphics/Components/MeshRenderer.hpp
+
+
+    # Cameras
     include/velecs/graphics/Components/Camera.hpp
     include/velecs/graphics/Components/PerspectiveCamera.hpp
     include/velecs/graphics/Components/OrthographicCamera.hpp
 
+
+    # Shaders
     include/velecs/graphics/Shader.hpp
     include/velecs/graphics/Shader/Shader.hpp
     include/velecs/graphics/Shader/IShaderProgram.hpp
