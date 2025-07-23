@@ -21,27 +21,23 @@ namespace velecs::graphics {
 
 // Public Methods
 
-Camera::Mat4 Camera::GetWorldMatrix() const
+const Camera::Mat4& Camera::GetViewMatrix() const
 {
-    return cachedProjectionMatrix;
+    auto& transform = GetOwner().GetTransform();
+    Mat4 currentWorldMatrix = transform.GetWorldMatrix();
+
+    // Check if we need to recalculate (transform changed or manually marked dirty)
+    if (isViewDirty || currentWorldMatrix.FastNotEqual(cachedWorldMatrix))
+    {
+        cachedWorldMatrix = currentWorldMatrix;
+        cachedViewMatrix = CalculateViewMatrix();
+        isViewDirty = false;
+    }
+
+    return cachedViewMatrix;
 }
 
-Camera::Mat4 Camera::GetViewMatrix() const
-{
-    // No easy way to get the transform attached to the same Entity.
-    throw std::runtime_error("Function not implemented!");
-
-    // check if last world mat is the same as the current using Mat4::FastEqual
-    // if (isViewDirty || transform.GetWorldMatrix().FastEqual(cachedWorldMatrix))
-    // {
-    //     cachedViewMatrix = CalculateViewMatrix();
-    //     isViewDirty = false;
-    // }
-
-    // return cachedViewMatrix;
-}
-
-Camera::Mat4 Camera::GetProjectionMatrix() const
+const Camera::Mat4& Camera::GetProjectionMatrix() const
 {
     if (isProjectionDirty)
     {
@@ -56,15 +52,9 @@ Camera::Mat4 Camera::GetProjectionMatrix() const
 
 // Protected Methods
 
-Camera::Mat4 Camera::CalculateWorldMatrix() const
-{
-    // No easy way to get the transform attached to the same Entity.
-    throw std::runtime_error("Function not implemented!");
-}
-
 Camera::Mat4 Camera::CalculateViewMatrix() const
 {
-    return GetWorldMatrix().Inverse();
+    return cachedWorldMatrix.Inverse();
 }
 
 // Private Fields

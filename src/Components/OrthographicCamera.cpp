@@ -22,6 +22,11 @@ namespace velecs::graphics {
 
 // Protected Methods
 
+OrthographicCamera::Mat4 OrthographicCamera::CalculateProjectionMatrix() const
+{
+    return Mat4::FromOrthographic(_viewport.GetWidth(), _viewport.GetHeight(), _near, _far);
+}
+
 // Private Fields
 
 // Private Methods

@@ -38,9 +38,8 @@ public:
 
     // Public Methods
 
-    Mat4 GetWorldMatrix() const;
-    Mat4 GetViewMatrix() const;
-    Mat4 GetProjectionMatrix() const;
+    const Mat4& GetViewMatrix() const;
+    const Mat4& GetProjectionMatrix() const;
 
 protected:
     // Protected Fields
@@ -53,10 +52,9 @@ protected:
 
     // Protected Methods
 
-    void MarkViewDirty() { isViewDirty = true; }
-    void MarkProjectionDirty() { isProjectionDirty = true; }
+    inline void MarkViewDirty() { isViewDirty = true; }
+    inline void MarkProjectionDirty() { isProjectionDirty = true; }
 
-    virtual Mat4 CalculateWorldMatrix() const;
     virtual Mat4 CalculateViewMatrix() const;
     virtual Mat4 CalculateProjectionMatrix() const = 0;
 
