@@ -19,6 +19,8 @@
 
 #include <velecs/math/Vec3.hpp>
 
+#include <vulkan/vulkan_core.h>
+
 #include <assimp/cimport.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -143,10 +145,13 @@ public:
     void UploadModelUniformsImmediate(
         VkDevice device,
         VmaAllocator allocator,
-        ModelUniforms modelUniforms,
+        VkDescriptorPool descriptorPool,
+        VkDescriptorSetLayout descriptorSetLayout,
+        const ModelUniforms& modelUniforms,
         std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
     )
     {
+        // Create the uniform buffer using VMA
         _modelUniformsBuffer = AllocatedBuffer::CreateImmediately(
             allocator,
             &modelUniforms,
@@ -154,9 +159,38 @@ public:
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             immediateSubmit
         );
+        
+        // Allocate descriptor set from the pool
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptorPool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &descriptorSetLayout;
+        
+        VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &_descriptorSet);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to allocate descriptor set");
+        }
+        
+        // Update the descriptor set to point to our uniform buffer
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = _modelUniformsBuffer->GetBuffer();
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(ModelUniforms);
+        
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = _descriptorSet;
+        descriptorWrite.dstBinding = 0;  // matches binding = 0 in shader
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        
+        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
 
-    void Draw(VkCommandBuffer cmd) override;
+    void Draw(VkCommandBuffer cmd, VkPipelineLayout pipelineLayout) override;
 
     VkPipelineVertexInputStateCreateInfo GetVertexInputInfo() const override;
     
@@ -189,6 +223,7 @@ protected:
     std::unique_ptr<AllocatedBuffer> indexBuffer{nullptr};
 
     std::unique_ptr<AllocatedBuffer> _modelUniformsBuffer{nullptr};
+    VkDescriptorSet _descriptorSet{VK_NULL_HANDLE};
 
     // Protected Methods
 

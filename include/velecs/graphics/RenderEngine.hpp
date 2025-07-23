@@ -118,6 +118,9 @@ private:
 
 
     // These fields should be better handled
+    VkDescriptorPool _descriptorPool{VK_NULL_HANDLE};
+    VkDescriptorSetLayout _objectDescriptorSetLayout{VK_NULL_HANDLE};
+    VkPipelineLayout _vertexColorsPipelineLayout{VK_NULL_HANDLE};
     VkPipeline _vertexColorsPipeline{VK_NULL_HANDLE};
 
     // Private Methods

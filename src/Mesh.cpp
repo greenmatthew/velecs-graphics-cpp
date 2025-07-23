@@ -127,8 +127,21 @@ void Mesh::Upload(VkDevice device, VmaAllocator allocator)
 
 }
 
-void Mesh::Draw(VkCommandBuffer cmd)
+void Mesh::Draw(VkCommandBuffer cmd, VkPipelineLayout pipelineLayout)
 {
+    // Bind descriptor set BEFORE drawing (if we have one)
+    if (_descriptorSet != VK_NULL_HANDLE) {        
+        vkCmdBindDescriptorSets(
+            cmd, 
+            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            pipelineLayout,  // We need this!
+            0,  // first set
+            1,  // descriptor set count
+            &_descriptorSet, 
+            0, nullptr  // dynamic offsets
+        );
+    }
+
     // Bind vertex buffer
     VkDeviceSize offset = 0;
     const VkBuffer vertexBuf = vertexBuffer->GetBuffer();

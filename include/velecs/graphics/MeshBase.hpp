@@ -46,7 +46,7 @@ public:
     /// @param cmd The command buffer to record draw commands into
     /// @details Implementation should bind vertex/index buffers and issue draw calls.
     ///          Assumes render pass is active and pipeline is bound.
-    virtual void Draw(VkCommandBuffer cmd) = 0;
+    virtual void Draw(VkCommandBuffer cmd, VkPipelineLayout pipelineLayout) = 0;
 
     /// @brief Gets the vertex input description for pipeline creation.
     /// @return Vertex input state configuration for this mesh type

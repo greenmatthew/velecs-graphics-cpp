@@ -119,12 +119,20 @@ void RenderEngine::Draw()
 
                 ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
 
-                renderer.mesh->UploadModelUniformsImmediate(_device, _allocator, uniforms, [this](std::function<void(VkCommandBuffer)> func) {
-                    ImmediateSubmit(std::move(func));
-                });
+                // Pass the descriptor pool and layout
+                renderer.mesh->UploadModelUniformsImmediate(
+                    _device, 
+                    _allocator, 
+                    _descriptorPool,                    // Add this
+                    _objectDescriptorSetLayout,         // Add this
+                    uniforms, 
+                    [this](std::function<void(VkCommandBuffer)> func) {
+                        ImmediateSubmit(std::move(func));
+                    }
+                );
 
                 // Draw the mesh
-                renderer.mesh->Draw(_mainCommandBuffer);
+                renderer.mesh->Draw(_mainCommandBuffer, _vertexColorsPipelineLayout);
             }
         });
     }
@@ -587,8 +595,6 @@ bool RenderEngine::InitPipelines()
     vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/vertex_colors.vert.spv");
     vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/vertex_colors.frag.spv");
 
-    VkDescriptorSetLayout objectDescriptorSetLayout{VK_NULL_HANDLE};
-
     // Define the uniform buffer binding
     VkDescriptorSetLayoutBinding objectUboBinding{};
     objectUboBinding.binding = 0;
@@ -602,22 +608,41 @@ bool RenderEngine::InitPipelines()
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &objectUboBinding;
 
-    VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &objectDescriptorSetLayout);
+    VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &_objectDescriptorSetLayout);
     if (result != VK_SUCCESS) {
         std::cerr << "Failed to create descriptor set layout: " << result << std::endl;
         return false;
     }
 
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1000;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1000;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+
+    result = vkCreateDescriptorPool(_device, &poolInfo, nullptr, &_descriptorPool);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create a descriptor pool: " << result << std::endl;
+        return false;
+    }
+
     RenderPipelineLayout pipelineLayout{};
     pipelineLayout.SetDevice(_device)
-        .AddDescriptorSetLayout(objectDescriptorSetLayout)
+        .AddDescriptorSetLayout(_objectDescriptorSetLayout)
         ;
+    _vertexColorsPipelineLayout = pipelineLayout.GetLayout();
 
     RenderPipeline pipeline{};
     pipeline.SetDevice(_device)
         .SetRenderPass(_renderPass)
         .SetViewport(GetWindowExtent())
-        .SetPipelineLayout(pipelineLayout.GetLayout())
+        .SetPipelineLayout(_vertexColorsPipelineLayout)
         .SetVertexInput(Vertex::GetVertexInputInfo())
         .AddShader(*vertexColorsProgram.vert)
         .AddShader(*vertexColorsProgram.frag)
