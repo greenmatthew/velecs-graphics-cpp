@@ -41,6 +41,12 @@ public:
     const Mat4& GetViewMatrix() const;
     const Mat4& GetProjectionMatrix() const;
 
+    inline float GetNearPlane() const { return _near; }
+    inline float GetFarPlane() const { return _far; }
+
+    inline void SetNearPlane(const float near) { _near = near; MarkProjectionDirty(); }
+    inline void SetFarPlane(const float far) { _far = far; MarkProjectionDirty(); }
+
 protected:
     // Protected Fields
 
@@ -60,6 +66,9 @@ protected:
 
 private:
     // Private Fields
+
+    float _near{0.1f};
+    float _far{1000.0f};
 
     // Private Methods
 };

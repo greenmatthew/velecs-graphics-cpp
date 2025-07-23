@@ -20,9 +20,9 @@
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 #include "velecs/graphics/Components/MeshRenderer.hpp"
 
-#include <velecs/ecs/Components/Transform.hpp>
-
+#include <velecs/ecs/Registry.hpp>
 #include <velecs/ecs/Entity.hpp>
+#include <velecs/ecs/Components/Transform.hpp>
 using namespace velecs::ecs;
 
 #include <iostream>
@@ -84,7 +84,7 @@ void RenderEngine::Draw()
     vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
-    auto& registry = Entity::GetRegistry();
+    auto& registry = Registry::Get();
     auto view = registry.view<Transform, MeshRenderer>();
     view.each([this](auto entity, Transform& transform, MeshRenderer& renderer) {
         // Upload mesh if dirty

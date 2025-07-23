@@ -36,19 +36,20 @@ public:
 
     // Public Methods
 
-    virtual Mat4 CalculateProjectionMatrix() const override;
+    Rect GetProjectionSize() const { return _projectionSize; }
+    void SetProjectionSize(const Rect& projectionSize) { _projectionSize = projectionSize; MarkProjectionDirty(); }
 
 protected:
     // Protected Fields
 
     // Protected Methods
 
+    virtual Mat4 CalculateProjectionMatrix() const override;
+
 private:
     // Private Fields
 
-    Rect _viewport{0, 0, 1920, 1080};
-    float _near{0.1f};
-    float _far{1000.0f};
+    Rect _projectionSize{0, 0, 1920, 1080};
 
     // Private Methods
 };

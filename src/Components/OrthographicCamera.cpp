@@ -24,7 +24,7 @@ namespace velecs::graphics {
 
 OrthographicCamera::Mat4 OrthographicCamera::CalculateProjectionMatrix() const
 {
-    return Mat4::FromOrthographic(_viewport.GetWidth(), _viewport.GetHeight(), _near, _far);
+    return Mat4::FromOrthographic(_projectionSize.GetWidth(), _projectionSize.GetHeight(), GetNearPlane(), GetFarPlane());
 }
 
 // Private Fields

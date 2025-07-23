@@ -12,6 +12,10 @@
 
 #include "velecs/graphics/Components/Camera.hpp"
 
+#include <velecs/math/Consts.hpp>
+
+#include <cmath>
+
 namespace velecs::graphics {
 
 /// @class PerspectiveCamera
@@ -34,11 +38,25 @@ public:
 
     // Public Methods
 
-    void SetVerticalFov(const float vFov);
-    void SetHorizontalFov(const float hFov);
+    inline float GetVerticalFovRad() const { return _vFovRad; }
+
+    inline float GetVerticalFovDeg() const { return _vFovRad * math::RAD_TO_DEG; }
+
+    inline float GetHorizontalFovRad() const { return VerticalToHorizontalFovRad(GetVerticalFovRad(), GetAspectRatio()); }
+
+    inline float GetHorizontalFovDeg() const { return GetHorizontalFovRad() * math::RAD_TO_DEG; }
+
+    inline float GetAspectRatio() const { return _aspectRatio; }
+
+    void SetVerticalFovRad(const float vFovRad);
+
+    inline void SetVerticalFovDeg(const float vFovDeg) { SetVerticalFovRad(vFovDeg * math::DEG_TO_RAD); }
+
+    void SetHorizontalFovRad(const float hFovRad);
+
+    inline void SetHorizontalFovDeg(const float hFovDeg) { SetHorizontalFovRad(hFovDeg * math::DEG_TO_RAD); }
+
     void SetAspectRatio(const float aspectRatio);
-    void SetNearPlane(const float near);
-    void SetFarPlane(const float far);
 
 protected:
     // Protected Fields
@@ -50,12 +68,22 @@ protected:
 private:
     // Private Fields
 
-    float _vFov{80.0f};
+    float _vFovRad{80.0f};
     float _aspectRatio{16.0f / 9.0f};
-    float _near{0.1f};
-    float _far{1000.0f};
 
     // Private Methods
+
+    /// @brief Converts vertical FOV to horizontal FOV.
+    /// @param vFovRad Vertical FOV in radians.
+    /// @param aspectRatio Aspect ratio (width / height).
+    /// @return Horizontal FOV in radians.
+    static float VerticalToHorizontalFovRad(float vFovRad, float aspectRatio);
+
+    /// @brief Converts horizontal FOV to vertical FOV.
+    /// @param hFovRad Horizontal FOV in radians.
+    /// @param aspectRatio Aspect ratio (width / height).
+    /// @return Vertical FOV in radians.
+    static float HorizontalToVerticalFovRad(float hFovRad, float aspectRatio);
 };
 
 } // namespace velecs::graphics
