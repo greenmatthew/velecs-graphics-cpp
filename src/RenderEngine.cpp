@@ -19,20 +19,24 @@
 #include "velecs/graphics/Shader.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 #include "velecs/graphics/Components/MeshRenderer.hpp"
+#include "velecs/graphics/Components/PerspectiveCamera.hpp"
+#include "velecs/graphics/Components/OrthographicCamera.hpp"
+#include "velecs/graphics/ObjectUniforms.hpp"
 
 #include <velecs/ecs/Registry.hpp>
 #include <velecs/ecs/Entity.hpp>
 #include <velecs/ecs/Components/Transform.hpp>
 using namespace velecs::ecs;
 
-#include <iostream>
-#include <fstream>
-#include <chrono>
-
 #include <VkBootstrap.h>
 
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <stdexcept>
 
 namespace velecs::graphics {
 
@@ -85,19 +89,45 @@ void RenderEngine::Draw()
     vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
     auto& registry = Registry::Get();
-    auto view = registry.view<Transform, MeshRenderer>();
-    view.each([this](auto entity, Transform& transform, MeshRenderer& renderer) {
-        // Upload mesh if dirty
-        if (renderer.mesh->IsDirty())
-        {
-            renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
-                ImmediateSubmit(std::move(func));
-            });
-        }
 
-        // Draw the mesh
-        renderer.mesh->Draw(_mainCommandBuffer);
+    // Get the first active camera that also has a Transform and throw an error if more are found
+    Camera* cam{nullptr};
+    registry.view<PerspectiveCamera, Transform>().each([&registry, &cam](auto e, auto& pCam, auto& transform){
+        if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
+        else cam = &pCam;
     });
+    registry.view<OrthographicCamera, Transform>().each([&cam](auto e, auto& oCam, auto& transform){
+        if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
+        else cam = &oCam;
+    });
+
+    if (cam)
+    {
+        auto view = registry.view<Transform, MeshRenderer>();
+        view.each([&](auto e, Transform& transform, MeshRenderer& renderer) {
+            Entity entity{e};
+
+            if (renderer.mesh != nullptr)
+            {
+                // Upload mesh if dirty
+                if (renderer.mesh->IsDirty())
+                {
+                    renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
+                        ImmediateSubmit(std::move(func));
+                    });
+                }
+
+                ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
+
+                renderer.mesh->UploadModelUniformsImmediate(_device, _allocator, uniforms, [this](std::function<void(VkCommandBuffer)> func) {
+                    ImmediateSubmit(std::move(func));
+                });
+
+                // Draw the mesh
+                renderer.mesh->Draw(_mainCommandBuffer);
+            }
+        });
+    }
 
     PostDraw();
 }
@@ -372,14 +402,14 @@ bool RenderEngine::InitRenderPass()
     color_attachment.format = _swapchainImageFormat; // The attachment will have the format needed by the swapchain
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 1 sample, we won't be doing MSAA 
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // We Clear when this attachment is loaded
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the renderpass ends
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the render pass ends
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // We don't care about stencil
     color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // We don't care about stencil
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know nor care about the starting layout of the attachment
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the renderpass ends, the image has to be on a layout ready for display
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the render pass ends, the image has to be on a layout ready for display
 
     VkAttachmentReference color_attachment_ref = {};
-    color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent renderpass itself
+    color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent render pass itself
     color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
@@ -557,8 +587,31 @@ bool RenderEngine::InitPipelines()
     vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/vertex_colors.vert.spv");
     vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/vertex_colors.frag.spv");
 
+    VkDescriptorSetLayout objectDescriptorSetLayout{VK_NULL_HANDLE};
+
+    // Define the uniform buffer binding
+    VkDescriptorSetLayoutBinding objectUboBinding{};
+    objectUboBinding.binding = 0;
+    objectUboBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    objectUboBinding.descriptorCount = 1;
+    objectUboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    objectUboBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &objectUboBinding;
+
+    VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &objectDescriptorSetLayout);
+    if (result != VK_SUCCESS) {
+        std::cerr << "Failed to create descriptor set layout: " << result << std::endl;
+        return false;
+    }
+
     RenderPipelineLayout pipelineLayout{};
-    pipelineLayout.SetDevice(_device);
+    pipelineLayout.SetDevice(_device)
+        .AddDescriptorSetLayout(objectDescriptorSetLayout)
+        ;
 
     RenderPipeline pipeline{};
     pipeline.SetDevice(_device)
@@ -857,7 +910,7 @@ void RenderEngine::PreDraw()
 
     VkClearValue clearValues[] = { clearValue, depthClear };
 
-    //start the main renderpass.
+    //start the main render pass.
     //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
     VkRenderPassBeginInfo rpInfo = {};
     rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

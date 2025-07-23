@@ -164,6 +164,7 @@ set(LIB_HEADERS
     include/velecs/graphics/MeshBase.hpp
     include/velecs/graphics/Mesh.hpp
     include/velecs/graphics/Components/MeshRenderer.hpp
+    include/velecs/graphics/ObjectUniforms.hpp
 
 
     # Cameras

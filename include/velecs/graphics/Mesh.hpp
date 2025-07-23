@@ -139,6 +139,23 @@ public:
 
     void Upload(VkDevice device, VmaAllocator allocator) override;
 
+    template<typename ModelUniforms>
+    void UploadModelUniformsImmediate(
+        VkDevice device,
+        VmaAllocator allocator,
+        ModelUniforms modelUniforms,
+        std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
+    )
+    {
+        _modelUniformsBuffer = AllocatedBuffer::CreateImmediately(
+            allocator,
+            &modelUniforms,
+            sizeof(ModelUniforms),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            immediateSubmit
+        );
+    }
+
     void Draw(VkCommandBuffer cmd) override;
 
     VkPipelineVertexInputStateCreateInfo GetVertexInputInfo() const override;
@@ -170,6 +187,8 @@ protected:
     
     /// @brief GPU index buffer.
     std::unique_ptr<AllocatedBuffer> indexBuffer{nullptr};
+
+    std::unique_ptr<AllocatedBuffer> _modelUniformsBuffer{nullptr};
 
     // Protected Methods
 

@@ -118,9 +118,6 @@ private:
 
 
     // These fields should be better handled
-    std::unique_ptr<Mesh> _testMesh{nullptr};
-    std::unique_ptr<AllocatedBuffer> _testVertexBuffer{nullptr};
-    std::unique_ptr<AllocatedBuffer> _testIndicesBuffer{nullptr};
     VkPipeline _vertexColorsPipeline{VK_NULL_HANDLE};
 
     // Private Methods
