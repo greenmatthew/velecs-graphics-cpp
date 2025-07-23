@@ -72,37 +72,37 @@ public:
         return GetWidth() * 0.5f;
     }
 
-    /// @brief Computes and returns the length of the rectangle.
+    /// @brief Computes and returns the height of the rectangle.
     ///
-    /// This method calculates the length of the rectangle by subtracting the y-coordinate of the minimum point from the y-coordinate of the maximum point.
-    /// @return The length of the rectangle.
-    inline float GetLength() const
+    /// This method calculates the height of the rectangle by subtracting the y-coordinate of the minimum point from the y-coordinate of the maximum point.
+    /// @return The height of the rectangle.
+    inline float GetHeight() const
     {
         return max.y - min.y;
     }
 
-    /// @brief Computes and returns half the length of the rectangle.
+    /// @brief Computes and returns half the height of the rectangle.
     ///
-    /// This method calculates half the length of the rectangle by subtracting the y-coordinate 
+    /// This method calculates half the height of the rectangle by subtracting the y-coordinate 
     /// of the minimum point from the y-coordinate of the maximum point, and then dividing the result by 2.
-    /// @return Half the length of the rectangle.
-    inline float GetHalfLength() const
+    /// @return Half the height of the rectangle.
+    inline float GetHalfHeight() const
     {
-        return GetLength() * 0.5f;
+        return GetHeight() * 0.5f;
     }
 
     /// @brief Computes and returns the area of the rectangle.
     /// @return The area of the rectangle.
     inline float GetArea() const
     {
-        return GetWidth() * GetLength();
+        return GetWidth() * GetHeight();
     }
 
     /// @brief Computes and returns the perimeter of the rectangle.
     /// @return The perimeter of the rectangle.
     inline float GetPerimeter() const
     {
-        return 2 * (GetWidth() + GetLength());
+        return 2 * (GetWidth() + GetHeight());
     }
 
     /// @brief Computes and returns the center point of the rectangle.
