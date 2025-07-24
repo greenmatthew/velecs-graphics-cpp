@@ -11,9 +11,10 @@
 #include "velecs/graphics/RenderEngine.hpp"
 
 #include "velecs/graphics/VulkanInitializers.hpp"
-#include "velecs/graphics/PipelineBuilder.hpp"
+#include "velecs/graphics/DescriptorLayoutBuilder.hpp"
 #include "velecs/graphics/RenderPipelineLayout.hpp"
 #include "velecs/graphics/RenderPipeline.hpp"
+#include "velecs/graphics/PipelineBuilder.hpp"
 #include "velecs/graphics/Vertex.hpp"
 #include "velecs/graphics/Mesh.hpp"
 #include "velecs/graphics/Shader.hpp"
@@ -61,6 +62,7 @@ SDL_AppResult RenderEngine::Init()
     if (!InitRenderPass()    ) return SDL_APP_FAILURE;
     if (!InitFramebuffers()  ) return SDL_APP_FAILURE;
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
+    if (!InitDescriptors()   ) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     return SDL_APP_CONTINUE;
@@ -70,7 +72,7 @@ void RenderEngine::Draw()
 {
     PreDraw();
 
-    vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _vertexColorsPipeline);
+    vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -117,22 +119,22 @@ void RenderEngine::Draw()
                     });
                 }
 
-                ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
+                // ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
 
-                // Pass the descriptor pool and layout
-                renderer.mesh->UploadModelUniformsImmediate(
-                    _device, 
-                    _allocator, 
-                    _descriptorPool,                    // Add this
-                    _objectDescriptorSetLayout,         // Add this
-                    uniforms, 
-                    [this](std::function<void(VkCommandBuffer)> func) {
-                        ImmediateSubmit(std::move(func));
-                    }
-                );
+                // // Pass the descriptor pool and layout
+                // renderer.mesh->UploadModelUniformsImmediate(
+                //     _device, 
+                //     _allocator, 
+                //     _descriptorPool,                    // Add this
+                //     _objectDescriptorSetLayout,         // Add this
+                //     uniforms, 
+                //     [this](std::function<void(VkCommandBuffer)> func) {
+                //         ImmediateSubmit(std::move(func));
+                //     }
+                // );
 
                 // Draw the mesh
-                renderer.mesh->Draw(_mainCommandBuffer, _vertexColorsPipelineLayout);
+                renderer.mesh->Draw(_mainCommandBuffer, _opaquePipelineLayout);
             }
         });
     }
@@ -199,9 +201,9 @@ bool RenderEngine::InitVulkan()
     //store the instance
     _instance = vkb_inst.instance;
     //store the debug messenger
-    _debug_messenger = vkb_inst.debug_messenger;
+    _debugMessenger = vkb_inst.debug_messenger;
 
-    if (_debug_messenger == nullptr)
+    if (_debugMessenger == nullptr)
     {
         std::cout << "Failed to create debug messenger." << std::endl;
     }
@@ -581,6 +583,52 @@ bool RenderEngine::InitSyncStructures()
     return true;
 }
 
+bool RenderEngine::InitDescriptors()
+{
+    // Return early while we're still implementing this
+    return true;
+
+    //create a descriptor pool that will hold 10 sets with 1 image each
+	std::vector<DescriptorAllocator::PoolSizeRatio> sizes =
+	{
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+	};
+
+	_descriptorAllocator.InitPool(_device, 10, sizes);
+
+    _objectDescriptorSetLayout = DescriptorLayoutBuilder{}
+        .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+        .Build(_device, VK_SHADER_STAGE_COMPUTE_BIT)
+        ;
+    
+    _objectDescriptorSet = _descriptorAllocator.Allocate(_device, _objectDescriptorSetLayout);
+
+	// VkDescriptorImageInfo imgInfo{};
+	// imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	// imgInfo.imageView = _drawImage.imageView;
+	
+	// VkWriteDescriptorSet drawImageWrite = {};
+	// drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	// drawImageWrite.pNext = nullptr;
+	
+	// drawImageWrite.dstBinding = 0;
+	// drawImageWrite.dstSet = _drawImageDescriptors;
+	// drawImageWrite.descriptorCount = 1;
+	// drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	// drawImageWrite.pImageInfo = &imgInfo;
+
+	// vkUpdateDescriptorSets(_device, 1, &drawImageWrite, 0, nullptr);
+
+	// //make sure both the descriptor allocator and the new layout get cleaned up properly
+	// _mainDeletionQueue.push_function([&]() {
+	// 	globalDescriptorAllocator.destroy_pool(_device);
+
+	// 	vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
+	// });
+
+    return true;
+}
+
 bool RenderEngine::InitPipelines()
 {
     // RasterizationShaderProgram program{};
@@ -591,64 +639,64 @@ bool RenderEngine::InitPipelines()
     // mat.shaderProgram = program;
     // mat.fields == ShaderReflector::Merge(ShaderReflector::Reflect(program.vert + program.frag + ...));
 
-    RasterizationShaderProgram vertexColorsProgram{};
-    vertexColorsProgram.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/vertex_colors.vert.spv");
-    vertexColorsProgram.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/vertex_colors.frag.spv");
+    RasterizationShaderProgram program{};
+    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/basic.vert.spv");
+    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/basic.frag.spv");
 
-    // Define the uniform buffer binding
-    VkDescriptorSetLayoutBinding objectUboBinding{};
-    objectUboBinding.binding = 0;
-    objectUboBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    objectUboBinding.descriptorCount = 1;
-    objectUboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    objectUboBinding.pImmutableSamplers = nullptr;
+    // // Define the uniform buffer binding
+    // VkDescriptorSetLayoutBinding objectUboBinding{};
+    // objectUboBinding.binding = 0;
+    // objectUboBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    // objectUboBinding.descriptorCount = 1;
+    // objectUboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    // objectUboBinding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &objectUboBinding;
+    // VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    // layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    // layoutInfo.bindingCount = 1;
+    // layoutInfo.pBindings = &objectUboBinding;
 
-    VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &_objectDescriptorSetLayout);
-    if (result != VK_SUCCESS) {
-        std::cerr << "Failed to create descriptor set layout: " << result << std::endl;
-        return false;
-    }
+    // VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &_objectDescriptorSetLayout);
+    // if (result != VK_SUCCESS) {
+    //     std::cerr << "Failed to create descriptor set layout: " << result << std::endl;
+    //     return false;
+    // }
 
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = 1000;
+    // VkDescriptorPoolSize poolSize{};
+    // poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    // poolSize.descriptorCount = 1000;
 
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    poolInfo.maxSets = 1000;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    // VkDescriptorPoolCreateInfo poolInfo{};
+    // poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    // poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    // poolInfo.maxSets = 1000;
+    // poolInfo.poolSizeCount = 1;
+    // poolInfo.pPoolSizes = &poolSize;
 
-    result = vkCreateDescriptorPool(_device, &poolInfo, nullptr, &_descriptorPool);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create a descriptor pool: " << result << std::endl;
-        return false;
-    }
+    // result = vkCreateDescriptorPool(_device, &poolInfo, nullptr, &_descriptorPool);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create a descriptor pool: " << result << std::endl;
+    //     return false;
+    // }
 
     RenderPipelineLayout pipelineLayout{};
     pipelineLayout.SetDevice(_device)
-        .AddDescriptorSetLayout(_objectDescriptorSetLayout)
+        // .AddDescriptorSetLayout(_objectDescriptorSetLayout)
         ;
-    _vertexColorsPipelineLayout = pipelineLayout.GetLayout();
+    _opaquePipelineLayout = pipelineLayout.GetLayout();
 
     RenderPipeline pipeline{};
     pipeline.SetDevice(_device)
         .SetRenderPass(_renderPass)
         .SetViewport(GetWindowExtent())
-        .SetPipelineLayout(_vertexColorsPipelineLayout)
+        .SetPipelineLayout(_opaquePipelineLayout)
         .SetVertexInput(Vertex::GetVertexInputInfo())
-        .AddShader(*vertexColorsProgram.vert)
-        .AddShader(*vertexColorsProgram.frag)
+        .AddShader(*program.vert.get())
+        .AddShader(*program.frag.get())
         .SetCullMode(VK_CULL_MODE_NONE)
         ;
-    _vertexColorsPipeline = pipeline.GetPipeline();
+    _opaquePipeline = pipeline.GetPipeline();
 
     // //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
     // PipelineBuilder pipelineBuilder;

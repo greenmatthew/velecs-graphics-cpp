@@ -14,6 +14,7 @@
 #include "velecs/graphics/Memory/DeletionQueue.hpp"
 #include "velecs/graphics/Memory/AllocatedImage.hpp"
 #include "velecs/graphics/Memory/AllocatedBuffer.hpp"
+#include "velecs/graphics/Memory/DescriptorAllocator.hpp"
 
 #include "velecs/graphics/Mesh.hpp"
 
@@ -66,21 +67,21 @@ private:
 
     SDL_Window* _window{nullptr}; /// @brief Pointer to the SDL window structure.
 
-    VkInstance _instance{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan library.
-    VkDebugUtilsMessengerEXT _debug_messenger{VK_NULL_HANDLE}; /// @brief Handle for Vulkan debug messaging.
-    VkPhysicalDevice _chosenGPU{VK_NULL_HANDLE}; /// @brief The chosen GPU for rendering operations.
-    VkDevice _device{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan device.
-    VkSurfaceKHR _surface{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan window surface.
+    VkInstance _instance{VK_NULL_HANDLE};                     /// @brief Handle to the Vulkan library.
+    VkDebugUtilsMessengerEXT _debugMessenger{VK_NULL_HANDLE}; /// @brief Handle for Vulkan debug messaging.
+    VkPhysicalDevice _chosenGPU{VK_NULL_HANDLE};              /// @brief The chosen GPU for rendering operations.
+    VkDevice _device{VK_NULL_HANDLE};                         /// @brief Handle to the Vulkan device.
+    VkSurfaceKHR _surface{VK_NULL_HANDLE};                    /// @brief Handle to the Vulkan window surface.
 
-    VkSwapchainKHR _swapchain{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan swapchain.
+    VkSwapchainKHR _swapchain{VK_NULL_HANDLE};           /// @brief Handle to the Vulkan swapchain.
     VkFormat _swapchainImageFormat{VK_FORMAT_UNDEFINED}; /// @brief The format used for swapchain images.
-    std::vector<VkImage> _swapchainImages; /// @brief List of images within the swapchain.
-    std::vector<VkImageView> _swapchainImageViews; /// @brief List of image views for accessing swapchain images.
+    std::vector<VkImage> _swapchainImages;               /// @brief List of images within the swapchain.
+    std::vector<VkImageView> _swapchainImageViews;       /// @brief List of image views for accessing swapchain images.
     uint32_t swapchainImageIndex{0};
 
-    VkQueue _graphicsQueue{VK_NULL_HANDLE}; /// @brief Queue used for submitting graphics commands.
-    uint32_t _graphicsQueueFamily{0}; /// @brief Index of the queue family for graphics operations.
-    VkCommandPool _commandPool{VK_NULL_HANDLE}; /// @brief Pool for allocating command buffers.
+    VkQueue _graphicsQueue{VK_NULL_HANDLE};             /// @brief Queue used for submitting graphics commands.
+    uint32_t _graphicsQueueFamily{0};                   /// @brief Index of the queue family for graphics operations.
+    VkCommandPool _commandPool{VK_NULL_HANDLE};         /// @brief Pool for allocating command buffers.
     VkCommandBuffer _mainCommandBuffer{VK_NULL_HANDLE}; /// @brief Main command buffer for recording rendering commands.
 
     VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
@@ -95,8 +96,8 @@ private:
     std::vector<VkPipelineLayout> pipelineLayouts;
 
     VkPipelineLayout _trianglePipelineLayout{VK_NULL_HANDLE}; /// @brief Handle to the pipeline layout.
-    VkPipeline _triangleWireFramePipeline{VK_NULL_HANDLE}; /// @brief Handle to the pipeline.
-    VkPipeline _rainbowSimpleMeshPipeline{VK_NULL_HANDLE}; /// @brief Handle to the pipeline.
+    VkPipeline _triangleWireFramePipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
+    VkPipeline _rainbowSimpleMeshPipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
 
     VkPipelineLayout _meshPipelineLayout{VK_NULL_HANDLE};
     VkPipeline _meshPipeline{VK_NULL_HANDLE};
@@ -118,10 +119,16 @@ private:
 
 
     // These fields should be better handled
-    VkDescriptorPool _descriptorPool{VK_NULL_HANDLE};
+    DescriptorAllocator _descriptorAllocator;
+
     VkDescriptorSetLayout _objectDescriptorSetLayout{VK_NULL_HANDLE};
-    VkPipelineLayout _vertexColorsPipelineLayout{VK_NULL_HANDLE};
-    VkPipeline _vertexColorsPipeline{VK_NULL_HANDLE};
+    VkDescriptorSet _objectDescriptorSet{nullptr};
+
+    VkDescriptorSetLayout _cameraDescriptorSetLayout{VK_NULL_HANDLE};
+    VkDescriptorSet _cameraDescriptorSet{nullptr};
+    
+    VkPipelineLayout _opaquePipelineLayout{VK_NULL_HANDLE};
+    VkPipeline _opaquePipeline{VK_NULL_HANDLE};
 
     // Private Methods
 
@@ -131,6 +138,7 @@ private:
     bool InitRenderPass();
     bool InitFramebuffers();
     bool InitSyncStructures();
+    bool InitDescriptors();
     bool InitPipelines();
     
     void CleanupVulkan();

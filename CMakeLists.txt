@@ -107,6 +107,7 @@ set(LIB_SOURCES
     # Vulkan Memory Management
     src/Memory/AllocatedBuffer.cpp
     src/Memory/DeletionQueue.cpp
+    src/Memory/DescriptorAllocator.cpp
 
 
     # Render Pipeline
@@ -115,6 +116,7 @@ set(LIB_SOURCES
     src/RenderPipelineLayout.cpp
     src/RenderPipeline.cpp
     src/VertexBufferParamsBuilder.cpp
+    src/DescriptorLayoutBuilder.cpp
 
 
     # Meshes
@@ -149,6 +151,7 @@ set(LIB_HEADERS
     include/velecs/graphics/Memory/AllocatedImage.hpp
     include/velecs/graphics/Memory/DeletionQueue.hpp
     include/velecs/graphics/Memory/UploadContext.hpp
+    include/velecs/graphics/Memory/DescriptorAllocator.hpp
 
 
     # Render Pipeline
@@ -157,6 +160,7 @@ set(LIB_HEADERS
     include/velecs/graphics/RenderPipeline.hpp
     include/velecs/graphics/PipelineBuilder.hpp
     include/velecs/graphics/VertexBufferParamsBuilder.hpp
+    include/velecs/graphics/DescriptorLayoutBuilder.hpp
 
 
     # Meshes
