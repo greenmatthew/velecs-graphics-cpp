@@ -24,6 +24,10 @@ namespace velecs::graphics {
 struct ObjectUniforms {
     Mat4 worldMat;
     Color32 color;
+    uint8_t padding[12];
+
+    static_assert(sizeof(Mat4) == 64);
+    static_assert(sizeof(Color32) == 4);
 };
 
 } // namespace velecs::graphics

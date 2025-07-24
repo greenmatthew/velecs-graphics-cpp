@@ -159,17 +159,36 @@ public:
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             immediateSubmit
         );
-        
-        // Allocate descriptor set from the pool
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = &descriptorSetLayout;
-        
-        VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &_descriptorSet);
-        if (result != VK_SUCCESS) {
-            throw std::runtime_error("Failed to allocate descriptor set");
+
+        if (_descriptorSet == VK_NULL_HANDLE)
+        {
+            // Allocate descriptor set from the pool
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = descriptorPool;
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &descriptorSetLayout;
+            
+            VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &_descriptorSet);
+            if (result != VK_SUCCESS) {
+                std::ostringstream oss;
+                oss << "Failed to allocate descriptor set. VkResult: " << result;
+                switch (result) {
+                    case VK_ERROR_FRAGMENTED_POOL:
+                        oss << " (VK_ERROR_FRAGMENTED_POOL)";
+                        break;
+                    case VK_ERROR_OUT_OF_POOL_MEMORY:
+                        oss << " (VK_ERROR_OUT_OF_POOL_MEMORY)";
+                        break;
+                    case VK_ERROR_OUT_OF_HOST_MEMORY:
+                        oss << " (VK_ERROR_OUT_OF_HOST_MEMORY)";
+                        break;
+                    case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+                        oss << " (VK_ERROR_OUT_OF_DEVICE_MEMORY)";
+                        break;
+                }
+                throw std::runtime_error(oss.str());
+            }
         }
         
         // Update the descriptor set to point to our uniform buffer
