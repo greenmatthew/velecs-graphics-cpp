@@ -40,6 +40,10 @@ public:
 
     // Public Fields
 
+    static const int VULKAN_MAJOR_VERSION;
+    static const int VULKAN_MINOR_VERSION;
+    static const int VULKAN_PATCH_VERSION;
+
     static const bool ENABLE_VALIDATION_LAYERS;
 
     // Constructors and Destructors

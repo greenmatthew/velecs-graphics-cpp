@@ -43,6 +43,10 @@ namespace velecs::graphics {
 
 // Public Fields
 
+const int RenderEngine::VULKAN_MAJOR_VERSION = 1;
+const int RenderEngine::VULKAN_MINOR_VERSION = 3;
+const int RenderEngine::VULKAN_PATCH_VERSION = 0;
+
 const bool RenderEngine::ENABLE_VALIDATION_LAYERS
 #ifdef _DEBUG
     = true;
@@ -162,10 +166,11 @@ bool RenderEngine::InitVulkan()
     const char* windowTitle = SDL_GetWindowTitle(_window);
 
     auto builderResult = builder.set_app_name(windowTitle)
-            .request_validation_layers(ENABLE_VALIDATION_LAYERS)
-            .require_api_version(1, 1, 0)
-            .use_default_debug_messenger()
-            .build();
+        .request_validation_layers(ENABLE_VALIDATION_LAYERS)
+        .use_default_debug_messenger()
+        .require_api_version(VULKAN_MAJOR_VERSION, VULKAN_MINOR_VERSION, VULKAN_PATCH_VERSION)
+        .build()
+        ;
 
     // Check if instance creation was successful before proceeding
     if (!builderResult)
@@ -196,16 +201,17 @@ bool RenderEngine::InitVulkan()
         }
     }
 
-    vkb::Instance vkb_inst = builderResult.value();
+    vkb::Instance vkbInstance = builderResult.value();
 
-    //store the instance
-    _instance = vkb_inst.instance;
-    //store the debug messenger
-    _debugMessenger = vkb_inst.debug_messenger;
+    // Store the instance
+    _instance = vkbInstance.instance;
+    // Store the debug messenger
+    _debugMessenger = vkbInstance.debug_messenger;
 
     if (_debugMessenger == nullptr)
     {
-        std::cout << "Failed to create debug messenger." << std::endl;
+        std::cerr << "Failed to create debug messenger." << std::endl;
+        return false;
     }
 
     // Get the surface of the window we opened with SDL
@@ -215,39 +221,39 @@ bool RenderEngine::InitVulkan()
         return false;
     }
 
-    //use vkbootstrap to select a GPU.
-    //We want a GPU that can write to the SDL surface and supports Vulkan 1.1
-    vkb::PhysicalDeviceSelector selector{ vkb_inst };
+    VkPhysicalDeviceVulkan13Features desiredFeatures{};
+    desiredFeatures.dynamicRendering = true;
+    desiredFeatures.synchronization2 = true;
 
-    // Create a VkPhysicalDeviceFeatures structure and set the fillModeNonSolid feature to VK_TRUE
-    VkPhysicalDeviceFeatures desiredFeatures = {};
-    desiredFeatures.fillModeNonSolid = VK_TRUE;
-
-    auto phys_ret = selector
-        .set_minimum_version(1, 1)
+    // Use vkbootstrap to select a GPU.
+    // We want a GPU that can write to the SDL surface and supports our version of Vulkan
+    vkb::PhysicalDeviceSelector selector{ vkbInstance };
+    auto selectorResult = selector
+        .set_minimum_version(VULKAN_MAJOR_VERSION, VULKAN_MINOR_VERSION)
         .set_surface(_surface)
-        .set_required_features(desiredFeatures)
-        .select();
+        .set_required_features_13(desiredFeatures)
+        .select()
+        ;
 
     // Check if physical device selection was successful before proceeding
-    if (!phys_ret)
+    if (!selectorResult)
     {
-        std::cerr << "Failed to select Vulkan physical device. Error: " << phys_ret.error().message() << std::endl;
+        std::cerr << "Failed to select Vulkan physical device. Error: " << selectorResult.error().message() << std::endl;
         return false;
     }
-    vkb::PhysicalDevice physicalDevice = phys_ret.value();
+    vkb::PhysicalDevice physicalDevice = selectorResult.value();
 
     // Create the final Vulkan device
     vkb::DeviceBuilder deviceBuilder{ physicalDevice };
     // Automatically propagate needed data from instance & physical device
-    auto dev_ret = deviceBuilder.build();
-    if (!dev_ret)
+    auto deviceBuilderResult = deviceBuilder.build();
+    if (!deviceBuilderResult)
     {
-        std::cerr << "Failed to create Vulkan device. Error: " << dev_ret.error().message() << std::endl;
+        std::cerr << "Failed to create Vulkan device. Error: " << deviceBuilderResult.error().message() << std::endl;
         return false;
     }
 
-    vkb::Device vkbDevice = dev_ret.value();
+    vkb::Device vkbDevice = deviceBuilderResult.value();
 
     // Get the VkDevice handle used in the rest of a Vulkan application
     _device = vkbDevice.device;
