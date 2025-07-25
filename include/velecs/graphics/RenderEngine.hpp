@@ -118,7 +118,7 @@ private:
 
     // UploadContext _uploadContext;
 
-    // DeletionQueue _mainDeletionQueue;
+    DeletionQueue _mainDeletionQueue;
 
     // VmaAllocator _allocator{nullptr};
 
@@ -240,7 +240,7 @@ private:
         vmaDestroyBuffer(_allocator, stagingBuffer._buffer, stagingBuffer._allocation);
         
         // Add GPU buffer to deletion queue
-        _mainDeletionQueue.PushDeletor([=]() {
+        _mainDeletionQueue.PushDeleter([=]() {
             vmaDestroyBuffer(_allocator, gpuBuffer._buffer, gpuBuffer._allocation);
         });
         

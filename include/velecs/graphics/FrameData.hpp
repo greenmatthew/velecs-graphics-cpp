@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "velecs/graphics/Memory/DeletionQueue.hpp"
+
 #include <vulkan/vulkan_core.h>
 
 namespace velecs::graphics {
@@ -30,6 +32,8 @@ public:
     VkSemaphore swapchainSemaphore{nullptr};
 
     VkFence renderFence{nullptr};
+
+    DeletionQueue deletionQueue;
 
     // Constructors and Destructors
 

@@ -87,6 +87,8 @@ void RenderEngine::Draw()
         return;
     }
 
+    GetCurrentFrame().deletionQueue.Flush();
+
     result = vkResetFences(_device, 1, &(GetCurrentFrame().renderFence));
     if (result != VK_SUCCESS)
     {
@@ -289,11 +291,15 @@ void RenderEngine::Cleanup()
 
     for (size_t i{0}; i < FRAME_OVERLAP; ++i)
     {
-        vkDestroyCommandPool(_device, _frames[i].commandPool, nullptr);
+        FrameData& frame = _frames[i];
+
+        vkDestroyCommandPool(_device, frame.commandPool, nullptr);
 
         // Also destroy sync objects
-        vkDestroyFence(_device, _frames[i].renderFence, nullptr);
-        vkDestroySemaphore(_device ,_frames[i].swapchainSemaphore, nullptr);
+        vkDestroyFence(_device, frame.renderFence, nullptr);
+        vkDestroySemaphore(_device, frame.swapchainSemaphore, nullptr);
+
+        frame.deletionQueue.Flush();
     }
 
     const size_t swapchainImagesCount = _swapchainImages.size();
@@ -301,6 +307,8 @@ void RenderEngine::Cleanup()
     {
         vkDestroySemaphore(_device ,_renderSemaphores[i], nullptr);
     }
+
+    _mainDeletionQueue.Flush();
 
     CleanupSwapchain();
 
@@ -490,7 +498,7 @@ bool RenderEngine::InitSwapchain()
     // }
 
     //add to deletion queues
-    // _mainDeletionQueue.PushDeletor
+    // _mainDeletionQueue.PushDeleter
     // (
     //     [=]()
     //     {

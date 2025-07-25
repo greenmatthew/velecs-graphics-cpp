@@ -24,8 +24,6 @@ public:
 
     // Public Fields
 
-    std::deque<std::function<void()>> deletors;
-
     // Constructors and Destructors
     
     /// @brief Default constructor.
@@ -36,7 +34,7 @@ public:
 
     // Public Methods
 
-    void PushDeletor(std::function<void()>&& deletor);
+    void PushDeleter(std::function<void()>&& deleter);
 
     void Flush();
 
@@ -47,6 +45,8 @@ protected:
 
 private:
     // Private Fields
+
+    std::deque<std::function<void()>> _deleters;
 
     // Private Methods
 };

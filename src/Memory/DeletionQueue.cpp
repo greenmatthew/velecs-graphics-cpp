@@ -18,20 +18,19 @@ namespace velecs::graphics {
 
 // Public Methods
 
-void DeletionQueue::PushDeletor(std::function<void()>&& deletor)
+void DeletionQueue::PushDeleter(std::function<void()>&& deleter)
 {
-    deletors.push_back(std::move(deletor));
+    _deleters.push_back(std::move(deleter));
 }
 
 void DeletionQueue::Flush()
 {
-    // reverse iterate the deletion queue to execute all the functions
-    for (auto it = deletors.rbegin(); it != deletors.rend(); it++)
+    // Reverse iterate the deletion queue to execute all the functions
+    for (auto it = _deleters.rbegin(); it != _deleters.rend(); it++)
     {
-        (*it)(); //call the function
+        (*it)(); // Call the deleter
     }
-
-    deletors.clear();
+    _deleters.clear();
 }
 
 // Protected Fields
