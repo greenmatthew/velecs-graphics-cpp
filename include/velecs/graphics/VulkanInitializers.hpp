@@ -14,17 +14,32 @@
 
 namespace velecs::graphics {
 
-VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags = 0);
+VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(const uint32_t queueFamilyIndex, const VkCommandPoolCreateFlags flags = 0);
 
 VkCommandBufferAllocateInfo VkExtCommandBufferAllocateInfo(
-    VkCommandPool pool,
-    uint32_t count = 1,
-    VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY
+    const VkCommandPool pool,
+    const uint32_t count = 1,
+    const VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY
 );
 
-VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags = 0);
+VkFenceCreateInfo VkExtFenceCreateInfo(const VkFenceCreateFlags flags = 0);
 
-VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
+VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(const VkSemaphoreCreateFlags flags = 0);
+
+VkCommandBufferBeginInfo VkExtCommandBufferBeginInfo(const VkCommandBufferUsageFlags flags = 0);
+
+VkImageSubresourceRange VkExtImageSubresourceRange(const VkImageAspectFlags aspectMask);
+
+VkSemaphoreSubmitInfo VkExtSemaphoreSubmitInfo(const VkPipelineStageFlags2 stageMask, const VkSemaphore semaphore);
+
+VkCommandBufferSubmitInfo VkExtCommandBufferSubmitInfo(const VkCommandBuffer cmd);
+
+VkSubmitInfo2 VkExtSubmitInfo2(
+    const VkCommandBufferSubmitInfo* cmd,
+    const VkSemaphoreSubmitInfo* signalSemaphoreInfo,
+    const VkSemaphoreSubmitInfo* waitSemaphoreInfo
+);
+
 
 VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 
@@ -45,9 +60,5 @@ VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageF
 VkImageViewCreateInfo VkExtImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
 
 VkPipelineDepthStencilStateCreateInfo VkExtDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
-
-VkCommandBufferBeginInfo VkExtCommandBufferBeginInfo(VkCommandBufferUsageFlags flags = 0);
-
-VkSubmitInfo VkExtSubmitInfo(VkCommandBuffer* cmd);
 
 } // namespace velecs::graphics

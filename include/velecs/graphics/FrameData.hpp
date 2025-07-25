@@ -28,7 +28,6 @@ public:
 	VkCommandBuffer mainCommandBuffer{nullptr};
 
     VkSemaphore swapchainSemaphore{nullptr};
-    VkSemaphore renderSemaphore{nullptr};
 
     VkFence renderFence{nullptr};
 

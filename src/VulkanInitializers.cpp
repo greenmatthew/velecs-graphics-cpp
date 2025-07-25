@@ -12,9 +12,9 @@
 
 namespace velecs::graphics {
 
-VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags/* = 0*/)
+VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(const uint32_t queueFamilyIndex, const VkCommandPoolCreateFlags flags/* = 0*/)
 {
-    VkCommandPoolCreateInfo info = {};
+    VkCommandPoolCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.pNext = nullptr;
     info.queueFamilyIndex = queueFamilyIndex;
@@ -23,12 +23,12 @@ VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(uint32_t queueFamilyIndex, Vk
 }
 
 VkCommandBufferAllocateInfo VkExtCommandBufferAllocateInfo(
-    VkCommandPool pool,
-    uint32_t count/* = 1*/,
-    VkCommandBufferLevel level/* = VK_COMMAND_BUFFER_LEVEL_PRIMARY*/
+    const VkCommandPool pool,
+    const uint32_t count/* = 1*/,
+    const VkCommandBufferLevel level/* = VK_COMMAND_BUFFER_LEVEL_PRIMARY*/
 )
 {
-    VkCommandBufferAllocateInfo info = {};
+    VkCommandBufferAllocateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.pNext = nullptr;
     info.commandPool = pool;
@@ -37,23 +37,89 @@ VkCommandBufferAllocateInfo VkExtCommandBufferAllocateInfo(
     return info;
 }
 
-VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags/* = 0*/)
+VkFenceCreateInfo VkExtFenceCreateInfo(const VkFenceCreateFlags flags/* = 0*/)
 {
-    VkFenceCreateInfo fenceCreateInfo = {};
+    VkFenceCreateInfo fenceCreateInfo{};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.pNext = nullptr;
     fenceCreateInfo.flags = flags;
     return fenceCreateInfo;
 }
 
-VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags/* = 0*/)
+VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(const VkSemaphoreCreateFlags flags/* = 0*/)
 {
-    VkSemaphoreCreateInfo semCreateInfo = {};
+    VkSemaphoreCreateInfo semCreateInfo{};
     semCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semCreateInfo.pNext = nullptr;
     semCreateInfo.flags = flags;
     return semCreateInfo;
 }
+
+VkCommandBufferBeginInfo VkExtCommandBufferBeginInfo(const VkCommandBufferUsageFlags flags/* = 0*/)
+{
+    VkCommandBufferBeginInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    info.pNext = nullptr;
+    info.pInheritanceInfo = nullptr;
+    info.flags = flags;
+    return info;
+}
+
+VkImageSubresourceRange VkExtImageSubresourceRange(const VkImageAspectFlags aspectMask)
+{
+    VkImageSubresourceRange subImage{};
+    subImage.aspectMask = aspectMask;
+    subImage.baseMipLevel = 0;
+    subImage.levelCount = VK_REMAINING_MIP_LEVELS;
+    subImage.baseArrayLayer = 0;
+    subImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    return subImage;
+}
+
+VkSemaphoreSubmitInfo VkExtSemaphoreSubmitInfo(const VkPipelineStageFlags2 stageMask, const VkSemaphore semaphore)
+{
+	VkSemaphoreSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	submitInfo.pNext = nullptr;
+	submitInfo.semaphore = semaphore;
+	submitInfo.stageMask = stageMask;
+	submitInfo.deviceIndex = 0;
+	submitInfo.value = 1;
+	return submitInfo;
+}
+
+VkCommandBufferSubmitInfo VkExtCommandBufferSubmitInfo(const VkCommandBuffer cmd)
+{
+	VkCommandBufferSubmitInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	info.pNext = nullptr;
+	info.commandBuffer = cmd;
+	info.deviceMask = 0;
+	return info;
+}
+
+VkSubmitInfo2 VkExtSubmitInfo2(
+    const VkCommandBufferSubmitInfo* cmd,
+    const VkSemaphoreSubmitInfo* signalSemaphoreInfo,
+    const VkSemaphoreSubmitInfo* waitSemaphoreInfo
+)
+{
+    VkSubmitInfo2 info{};
+    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    info.pNext = nullptr;
+    info.waitSemaphoreInfoCount = waitSemaphoreInfo == nullptr ? 0 : 1;
+    info.pWaitSemaphoreInfos = waitSemaphoreInfo;
+    info.signalSemaphoreInfoCount = signalSemaphoreInfo == nullptr ? 0 : 1;
+    info.pSignalSemaphoreInfos = signalSemaphoreInfo;
+    info.commandBufferInfoCount = 1;
+    info.pCommandBufferInfos = cmd;
+    return info;
+}
+
+
+
+
+
 
 VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule)
 {
@@ -72,7 +138,7 @@ VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStage
 
 VkPipelineVertexInputStateCreateInfo VkExtVertexInputStateCreateInfo()
 {
-    VkPipelineVertexInputStateCreateInfo info = {};
+    VkPipelineVertexInputStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -84,7 +150,7 @@ VkPipelineVertexInputStateCreateInfo VkExtVertexInputStateCreateInfo()
 
 VkPipelineInputAssemblyStateCreateInfo VkExtInputAssemblyCreateInfo(VkPrimitiveTopology topology)
 {
-    VkPipelineInputAssemblyStateCreateInfo info = {};
+    VkPipelineInputAssemblyStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -96,7 +162,7 @@ VkPipelineInputAssemblyStateCreateInfo VkExtInputAssemblyCreateInfo(VkPrimitiveT
 
 VkPipelineRasterizationStateCreateInfo VkExtRasterizationStateCreateInfo(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
 {
-    VkPipelineRasterizationStateCreateInfo info = {};
+    VkPipelineRasterizationStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -120,7 +186,7 @@ VkPipelineRasterizationStateCreateInfo VkExtRasterizationStateCreateInfo(VkPolyg
 
 VkPipelineMultisampleStateCreateInfo VkExtMultisamplingStateCreateInfo()
 {
-    VkPipelineMultisampleStateCreateInfo info = {};
+    VkPipelineMultisampleStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -136,7 +202,7 @@ VkPipelineMultisampleStateCreateInfo VkExtMultisamplingStateCreateInfo()
 
 VkPipelineColorBlendAttachmentState VkExtColorBlendAttachmentState()
 {
-    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
@@ -160,7 +226,7 @@ VkPipelineLayoutCreateInfo VkExtPipelineLayoutCreateInfo()
 
 VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
 {
-    VkImageCreateInfo info = {};
+    VkImageCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -181,7 +247,7 @@ VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageF
 VkImageViewCreateInfo VkExtImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags)
 {
     //build a image-view for the depth image to use for rendering
-    VkImageViewCreateInfo info = {};
+    VkImageViewCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -199,7 +265,7 @@ VkImageViewCreateInfo VkExtImageviewCreateInfo(VkFormat format, VkImage image, V
 
 VkPipelineDepthStencilStateCreateInfo VkExtDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp)
 {
-    VkPipelineDepthStencilStateCreateInfo info = {};
+    VkPipelineDepthStencilStateCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     info.pNext = nullptr;
 
@@ -210,34 +276,6 @@ VkPipelineDepthStencilStateCreateInfo VkExtDepthStencilCreateInfo(bool bDepthTes
     info.minDepthBounds = 0.0f; // Optional
     info.maxDepthBounds = 1.0f; // Optional
     info.stencilTestEnable = VK_FALSE;
-
-    return info;
-}
-
-VkCommandBufferBeginInfo VkExtCommandBufferBeginInfo(VkCommandBufferUsageFlags flags /*= 0*/)
-{
-    VkCommandBufferBeginInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    info.pNext = nullptr;
-
-    info.pInheritanceInfo = nullptr;
-    info.flags = flags;
-    return info;
-}
-
-VkSubmitInfo VkExtSubmitInfo(VkCommandBuffer* cmd)
-{
-    VkSubmitInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    info.pNext = nullptr;
-
-    info.waitSemaphoreCount = 0;
-    info.pWaitSemaphores = nullptr;
-    info.pWaitDstStageMask = nullptr;
-    info.commandBufferCount = 1;
-    info.pCommandBuffers = cmd;
-    info.signalSemaphoreCount = 0;
-    info.pSignalSemaphores = nullptr;
 
     return info;
 }

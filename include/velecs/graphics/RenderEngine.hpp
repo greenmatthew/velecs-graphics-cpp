@@ -87,6 +87,7 @@ private:
     VkFormat _swapchainImageFormat{VK_FORMAT_UNDEFINED}; /// @brief The format used for swapchain images.
     std::vector<VkImage> _swapchainImages;               /// @brief List of images within the swapchain.
     std::vector<VkImageView> _swapchainImageViews;       /// @brief List of image views for accessing swapchain images.
+    std::vector<VkSemaphore> _renderSemaphores;          /// @brief Semaphores signaled when rendering to swapchain images completes (one per swapchain image).
 
     size_t _frameNumber{0};
     static const size_t FRAME_OVERLAP = 2;
@@ -156,6 +157,13 @@ private:
     void CleanupSwapchain();
 
     FrameData& GetCurrentFrame();
+
+    static void TransitionImage(
+        const VkCommandBuffer cmd,
+        const VkImage image,
+        const VkImageLayout currentLayout,
+        const VkImageLayout newLayout
+    );
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
@@ -238,9 +246,6 @@ private:
         
         return gpuBuffer; // Success case
     }
-
-    void PreDraw();
-    void PostDraw();
 };
 
 } // namespace velecs::graphics
