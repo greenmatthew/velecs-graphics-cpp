@@ -32,6 +32,7 @@ void DescriptorAllocator::InitPool(const VkDevice device, const uint32_t maxSets
     }
 
     VkDescriptorPoolCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     info.flags = 0;
     info.maxSets = maxSets;
     info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());

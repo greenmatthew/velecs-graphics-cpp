@@ -42,7 +42,7 @@ public:
 
     VkDescriptorSetLayout Build(
         const VkDevice device,
-        const VkShaderStageFlags stages,
+        const VkShaderStageFlags stageFlags,
         const void* const pNext = nullptr,
         const VkDescriptorSetLayoutCreateFlags flags = 0
     );

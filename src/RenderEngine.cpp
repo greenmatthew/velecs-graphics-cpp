@@ -622,43 +622,46 @@ bool RenderEngine::InitSyncStructures()
 
 bool RenderEngine::InitDescriptors()
 {
-    // //create a descriptor pool that will hold 10 sets with 1 image each
-    // std::vector<DescriptorAllocator::PoolSizeRatio> sizes =
-    // {
-    //     { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-    // };
+    // Create a descriptor pool that will hold 10 sets with 1 image each
+    _globalDescriptorAllocator.InitPool(
+        _device,
+        10,
+        std::vector<DescriptorAllocator::PoolSizeRatio>{
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+        }
+    );
 
-    // _descriptorAllocator.InitPool(_device, 10, sizes);
-
-    // _objectDescriptorSetLayout = DescriptorLayoutBuilder{}
-    //     .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-    //     .Build(_device, VK_SHADER_STAGE_COMPUTE_BIT)
-    //     ;
+    // Make the descriptor set layout for our compute draw
+    _drawImageDescriptorLayout = DescriptorLayoutBuilder{}
+        .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+        .Build(_device, VK_SHADER_STAGE_COMPUTE_BIT)
+        ;
     
-    // _objectDescriptorSet = _descriptorAllocator.Allocate(_device, _objectDescriptorSetLayout);
+    // Allocate a descriptor set for our draw image
+    _drawImageDescriptors = _globalDescriptorAllocator.Allocate(_device, _drawImageDescriptorLayout);
 
-    // VkDescriptorImageInfo imgInfo{};
-    // imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    // imgInfo.imageView = _drawImage.imageView;
+    VkDescriptorImageInfo imgInfo{};
+    imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imgInfo.imageView = _drawImage.imageView;
     
-    // VkWriteDescriptorSet drawImageWrite = {};
-    // drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    // drawImageWrite.pNext = nullptr;
+    VkWriteDescriptorSet drawImageWrite = {};
+    drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    drawImageWrite.pNext = nullptr;
     
-    // drawImageWrite.dstBinding = 0;
-    // drawImageWrite.dstSet = _drawImageDescriptors;
-    // drawImageWrite.descriptorCount = 1;
-    // drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    // drawImageWrite.pImageInfo = &imgInfo;
+    drawImageWrite.dstBinding = 0;
+    drawImageWrite.dstSet = _drawImageDescriptors;
+    drawImageWrite.descriptorCount = 1;
+    drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    drawImageWrite.pImageInfo = &imgInfo;
 
-    // vkUpdateDescriptorSets(_device, 1, &drawImageWrite, 0, nullptr);
+    vkUpdateDescriptorSets(_device, 1, &drawImageWrite, 0, nullptr);
 
-    // //make sure both the descriptor allocator and the new layout get cleaned up properly
-    // _mainDeletionQueue.push_function([&]() {
-    //     globalDescriptorAllocator.destroy_pool(_device);
+    // Make sure both the descriptor allocator and the new layout get cleaned up properly
+    _mainDeletionQueue.PushDeleter([&]() {
+        _globalDescriptorAllocator.DestroyPool(_device);
 
-    //     vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
-    // });
+        vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
+    });
 
     return true;
 }

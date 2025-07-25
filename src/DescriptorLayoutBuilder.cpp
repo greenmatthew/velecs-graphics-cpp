@@ -23,7 +23,7 @@ namespace velecs::graphics {
 DescriptorLayoutBuilder& DescriptorLayoutBuilder::AddBinding(const uint32_t binding, const VkDescriptorType type)
 {
     VkDescriptorSetLayoutBinding newBinding{};
-    newBinding.binding = 0;
+    newBinding.binding = binding;
     newBinding.descriptorCount = 1;
     newBinding.descriptorType = type;
 
@@ -41,14 +41,14 @@ DescriptorLayoutBuilder& DescriptorLayoutBuilder::Clear()
 
 VkDescriptorSetLayout DescriptorLayoutBuilder::Build(
     const VkDevice device,
-    const VkShaderStageFlags stages,
+    const VkShaderStageFlags stageFlags,
     const void* const pNext/* = nullptr*/,
     const VkDescriptorSetLayoutCreateFlags flags/* = 0*/
 )
 {
     for (auto& binding : _bindings)
     {
-        binding.stageFlags = stages;
+        binding.stageFlags |= stageFlags;
     }
 
     VkDescriptorSetLayoutCreateInfo info{};

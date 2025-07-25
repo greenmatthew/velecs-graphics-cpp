@@ -102,6 +102,11 @@ private:
     AllocatedImage _drawImage;
     VkExtent2D _drawExtent;
 
+    DescriptorAllocator _globalDescriptorAllocator;
+
+    VkDescriptorSetLayout _drawImageDescriptorLayout{VK_NULL_HANDLE};
+    VkDescriptorSet _drawImageDescriptors{nullptr};
+
     // VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
     // std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
 
@@ -128,11 +133,7 @@ private:
     // VkDescriptorPool imguiPool{VK_NULL_HANDLE};
 
 
-    // // These fields should be better handled
-    // DescriptorAllocator _descriptorAllocator;
-
-    // VkDescriptorSetLayout _objectDescriptorSetLayout{VK_NULL_HANDLE};
-    // VkDescriptorSet _objectDescriptorSet{nullptr};
+    // These fields should be better handled
 
     // VkDescriptorSetLayout _cameraDescriptorSetLayout{VK_NULL_HANDLE};
     // VkDescriptorSet _cameraDescriptorSet{nullptr};
