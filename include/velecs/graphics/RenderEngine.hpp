@@ -53,7 +53,7 @@ public:
         : _window(window) {}
 
     /// @brief Default deconstructor.
-    ~RenderEngine() = default;
+    inline ~RenderEngine() { Cleanup(); }
 
     // Public Methods
 
@@ -69,6 +69,8 @@ protected:
 private:
     // Private Fields
 
+    bool _wasInitialized{false};
+
     SDL_Window* _window{nullptr}; /// @brief Pointer to the SDL window structure.
 
     VkInstance _instance{VK_NULL_HANDLE};                     /// @brief Handle to the Vulkan library.
@@ -77,62 +79,65 @@ private:
     VkDevice _device{VK_NULL_HANDLE};                         /// @brief Handle to the Vulkan device.
     VkSurfaceKHR _surface{VK_NULL_HANDLE};                    /// @brief Handle to the Vulkan window surface.
 
+    // TODO: Verify if this is better than RenderEngine::GetWindowExtent()...
+    VkExtent2D _swapchainExtent;
     VkSwapchainKHR _swapchain{VK_NULL_HANDLE};           /// @brief Handle to the Vulkan swapchain.
     VkFormat _swapchainImageFormat{VK_FORMAT_UNDEFINED}; /// @brief The format used for swapchain images.
     std::vector<VkImage> _swapchainImages;               /// @brief List of images within the swapchain.
     std::vector<VkImageView> _swapchainImageViews;       /// @brief List of image views for accessing swapchain images.
-    uint32_t swapchainImageIndex{0};
 
-    VkQueue _graphicsQueue{VK_NULL_HANDLE};             /// @brief Queue used for submitting graphics commands.
-    uint32_t _graphicsQueueFamily{0};                   /// @brief Index of the queue family for graphics operations.
-    VkCommandPool _commandPool{VK_NULL_HANDLE};         /// @brief Pool for allocating command buffers.
-    VkCommandBuffer _mainCommandBuffer{VK_NULL_HANDLE}; /// @brief Main command buffer for recording rendering commands.
+    // uint32_t swapchainImageIndex{0};
 
-    VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
-    std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
+    // VkQueue _graphicsQueue{VK_NULL_HANDLE};             /// @brief Queue used for submitting graphics commands.
+    // uint32_t _graphicsQueueFamily{0};                   /// @brief Index of the queue family for graphics operations.
+    // VkCommandPool _commandPool{VK_NULL_HANDLE};         /// @brief Pool for allocating command buffers.
+    // VkCommandBuffer _mainCommandBuffer{VK_NULL_HANDLE}; /// @brief Main command buffer for recording rendering commands.
 
-    VkSemaphore _presentSemaphore{VK_NULL_HANDLE}, _renderSemaphore{VK_NULL_HANDLE}; /// @brief Semaphore for synchronizing image presentation.
-    VkFence _renderFence{VK_NULL_HANDLE}; /// @brief Fence for synchronizing rendering operations.
+    // VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
+    // std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
 
-    VkPipeline currentPipeline{VK_NULL_HANDLE};
+    // VkSemaphore _presentSemaphore{VK_NULL_HANDLE}, _renderSemaphore{VK_NULL_HANDLE}; /// @brief Semaphore for synchronizing image presentation.
+    // VkFence _renderFence{VK_NULL_HANDLE}; /// @brief Fence for synchronizing rendering operations.
 
-    std::vector<VkPipeline> pipelines;
-    std::vector<VkPipelineLayout> pipelineLayouts;
+    // VkPipeline currentPipeline{VK_NULL_HANDLE};
 
-    VkPipelineLayout _trianglePipelineLayout{VK_NULL_HANDLE}; /// @brief Handle to the pipeline layout.
-    VkPipeline _triangleWireFramePipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
-    VkPipeline _rainbowSimpleMeshPipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
+    // std::vector<VkPipeline> pipelines;
+    // std::vector<VkPipelineLayout> pipelineLayouts;
 
-    VkPipelineLayout _meshPipelineLayout{VK_NULL_HANDLE};
-    VkPipeline _meshPipeline{VK_NULL_HANDLE};
+    // VkPipelineLayout _trianglePipelineLayout{VK_NULL_HANDLE}; /// @brief Handle to the pipeline layout.
+    // VkPipeline _triangleWireFramePipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
+    // VkPipeline _rainbowSimpleMeshPipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
 
-    VkPipelineLayout simpleMeshPipelineLayout{VK_NULL_HANDLE};
-    VkPipeline simpleMeshPipeline{VK_NULL_HANDLE};
+    // VkPipelineLayout _meshPipelineLayout{VK_NULL_HANDLE};
+    // VkPipeline _meshPipeline{VK_NULL_HANDLE};
 
-    UploadContext _uploadContext;
+    // VkPipelineLayout simpleMeshPipelineLayout{VK_NULL_HANDLE};
+    // VkPipeline simpleMeshPipeline{VK_NULL_HANDLE};
 
-    DeletionQueue _mainDeletionQueue;
+    // UploadContext _uploadContext;
 
-    VmaAllocator _allocator{nullptr};
+    // DeletionQueue _mainDeletionQueue;
 
-    VkImageView _depthImageView{VK_NULL_HANDLE};
-    AllocatedImage _depthImage;
-    VkFormat _depthFormat{VK_FORMAT_UNDEFINED};
+    // VmaAllocator _allocator{nullptr};
 
-    VkDescriptorPool imguiPool{VK_NULL_HANDLE};
+    // VkImageView _depthImageView{VK_NULL_HANDLE};
+    // AllocatedImage _depthImage;
+    // VkFormat _depthFormat{VK_FORMAT_UNDEFINED};
+
+    // VkDescriptorPool imguiPool{VK_NULL_HANDLE};
 
 
-    // These fields should be better handled
-    DescriptorAllocator _descriptorAllocator;
+    // // These fields should be better handled
+    // DescriptorAllocator _descriptorAllocator;
 
-    VkDescriptorSetLayout _objectDescriptorSetLayout{VK_NULL_HANDLE};
-    VkDescriptorSet _objectDescriptorSet{nullptr};
+    // VkDescriptorSetLayout _objectDescriptorSetLayout{VK_NULL_HANDLE};
+    // VkDescriptorSet _objectDescriptorSet{nullptr};
 
-    VkDescriptorSetLayout _cameraDescriptorSetLayout{VK_NULL_HANDLE};
-    VkDescriptorSet _cameraDescriptorSet{nullptr};
+    // VkDescriptorSetLayout _cameraDescriptorSetLayout{VK_NULL_HANDLE};
+    // VkDescriptorSet _cameraDescriptorSet{nullptr};
     
-    VkPipelineLayout _opaquePipelineLayout{VK_NULL_HANDLE};
-    VkPipeline _opaquePipeline{VK_NULL_HANDLE};
+    // VkPipelineLayout _opaquePipelineLayout{VK_NULL_HANDLE};
+    // VkPipeline _opaquePipeline{VK_NULL_HANDLE};
 
     // Private Methods
 
@@ -145,10 +150,11 @@ private:
     bool InitDescriptors();
     bool InitPipelines();
     
-    void CleanupVulkan();
+    void CleanupSwapchain();
 
     VkExtent2D GetWindowExtent() const;
 
+    void CreateSwapchain(const VkExtent2D extent);
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
@@ -231,8 +237,6 @@ private:
         
         return gpuBuffer; // Success case
     }
-
-    void CreateTriangleBuffers();
 
     void PreDraw();
     void PostDraw();

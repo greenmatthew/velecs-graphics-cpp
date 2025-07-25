@@ -62,93 +62,105 @@ SDL_AppResult RenderEngine::Init()
 {
     if (!InitVulkan()        ) return SDL_APP_FAILURE;
     if (!InitSwapchain()     ) return SDL_APP_FAILURE;
-    if (!InitCommands()      ) return SDL_APP_FAILURE;
-    if (!InitRenderPass()    ) return SDL_APP_FAILURE;
-    if (!InitFramebuffers()  ) return SDL_APP_FAILURE;
-    if (!InitSyncStructures()) return SDL_APP_FAILURE;
-    if (!InitDescriptors()   ) return SDL_APP_FAILURE;
-    if (!InitPipelines()     ) return SDL_APP_FAILURE;
+    // if (!InitCommands()      ) return SDL_APP_FAILURE;
+    // if (!InitRenderPass()    ) return SDL_APP_FAILURE;
+    // if (!InitFramebuffers()  ) return SDL_APP_FAILURE;
+    // if (!InitSyncStructures()) return SDL_APP_FAILURE;
+    // if (!InitDescriptors()   ) return SDL_APP_FAILURE;
+    // if (!InitPipelines()     ) return SDL_APP_FAILURE;
+
+    _wasInitialized = true;
 
     return SDL_APP_CONTINUE;
 }
 
 void RenderEngine::Draw()
 {
-    PreDraw();
+    // PreDraw();
 
-    vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
+    // vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
 
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    auto windowExtent = GetWindowExtent();
-    viewport.width = static_cast<float>(windowExtent.width);
-    viewport.height = static_cast<float>(windowExtent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    // VkViewport viewport = {};
+    // viewport.x = 0.0f;
+    // viewport.y = 0.0f;
+    // auto windowExtent = GetWindowExtent();
+    // viewport.width = static_cast<float>(windowExtent.width);
+    // viewport.height = static_cast<float>(windowExtent.height);
+    // viewport.minDepth = 0.0f;
+    // viewport.maxDepth = 1.0f;
 
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
+    // VkRect2D scissor = {};
+    // scissor.offset = {0, 0};
+    // scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
 
-    vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
+    // vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
+    // vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
 
-    auto& registry = Registry::Get();
+    // auto& registry = Registry::Get();
 
-    // Get the first active camera that also has a Transform and throw an error if more are found
-    Camera* cam{nullptr};
-    registry.view<PerspectiveCamera, Transform>().each([&registry, &cam](auto e, auto& pCam, auto& transform){
-        if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
-        else cam = &pCam;
-    });
-    registry.view<OrthographicCamera, Transform>().each([&cam](auto e, auto& oCam, auto& transform){
-        if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
-        else cam = &oCam;
-    });
+    // // Get the first active camera that also has a Transform and throw an error if more are found
+    // Camera* cam{nullptr};
+    // registry.view<PerspectiveCamera, Transform>().each([&registry, &cam](auto e, auto& pCam, auto& transform){
+    //     if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
+    //     else cam = &pCam;
+    // });
+    // registry.view<OrthographicCamera, Transform>().each([&cam](auto e, auto& oCam, auto& transform){
+    //     if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
+    //     else cam = &oCam;
+    // });
 
-    if (cam)
-    {
-        auto view = registry.view<Transform, MeshRenderer>();
-        view.each([&](auto e, Transform& transform, MeshRenderer& renderer) {
-            Entity entity{e};
+    // if (cam)
+    // {
+    //     auto view = registry.view<Transform, MeshRenderer>();
+    //     view.each([&](auto e, Transform& transform, MeshRenderer& renderer) {
+    //         Entity entity{e};
 
-            if (renderer.mesh != nullptr)
-            {
-                // Upload mesh if dirty
-                if (renderer.mesh->IsDirty())
-                {
-                    renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
-                        ImmediateSubmit(std::move(func));
-                    });
-                }
+    //         if (renderer.mesh != nullptr)
+    //         {
+    //             // Upload mesh if dirty
+    //             if (renderer.mesh->IsDirty())
+    //             {
+    //                 renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
+    //                     ImmediateSubmit(std::move(func));
+    //                 });
+    //             }
 
-                // ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
+    //             // ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
 
-                // // Pass the descriptor pool and layout
-                // renderer.mesh->UploadModelUniformsImmediate(
-                //     _device, 
-                //     _allocator, 
-                //     _descriptorPool,                    // Add this
-                //     _objectDescriptorSetLayout,         // Add this
-                //     uniforms, 
-                //     [this](std::function<void(VkCommandBuffer)> func) {
-                //         ImmediateSubmit(std::move(func));
-                //     }
-                // );
+    //             // // Pass the descriptor pool and layout
+    //             // renderer.mesh->UploadModelUniformsImmediate(
+    //             //     _device, 
+    //             //     _allocator, 
+    //             //     _descriptorPool,                    // Add this
+    //             //     _objectDescriptorSetLayout,         // Add this
+    //             //     uniforms, 
+    //             //     [this](std::function<void(VkCommandBuffer)> func) {
+    //             //         ImmediateSubmit(std::move(func));
+    //             //     }
+    //             // );
 
-                // Draw the mesh
-                renderer.mesh->Draw(_mainCommandBuffer, _opaquePipelineLayout);
-            }
-        });
-    }
+    //             // Draw the mesh
+    //             renderer.mesh->Draw(_mainCommandBuffer, _opaquePipelineLayout);
+    //         }
+    //     });
+    // }
 
-    PostDraw();
+    // PostDraw();
 }
 
 void RenderEngine::Cleanup()
 {
-    CleanupVulkan();
+    if (!_wasInitialized) return;
+
+    CleanupSwapchain();
+
+    vkDestroySurfaceKHR(_instance, _surface, nullptr);
+    vkDestroyDevice(_device, nullptr);
+    
+    vkb::destroy_debug_utils_messenger(_instance, _debugMessenger);
+    vkDestroyInstance(_instance, nullptr);
+
+    _wasInitialized = false;
 }
 
 // Protected Fields
@@ -259,92 +271,62 @@ bool RenderEngine::InitVulkan()
     _device = vkbDevice.device;
     _chosenGPU = physicalDevice.physical_device;
 
-    // Use vkbootstrap to get a Graphics queue
-    _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
-    _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+    // // Use vkbootstrap to get a Graphics queue
+    // _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+    // _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
-    // Initialize the memory allocator
-    VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.physicalDevice = _chosenGPU;
-    allocatorInfo.device = _device;
-    allocatorInfo.instance = _instance;
-    vmaCreateAllocator(&allocatorInfo, &_allocator);
+    // // Initialize the memory allocator
+    // VmaAllocatorCreateInfo allocatorInfo = {};
+    // allocatorInfo.physicalDevice = _chosenGPU;
+    // allocatorInfo.device = _device;
+    // allocatorInfo.instance = _instance;
+    // vmaCreateAllocator(&allocatorInfo, &_allocator);
 
     return true;
 }
 
 bool RenderEngine::InitSwapchain()
 {
-    vkb::SwapchainBuilder swapchainBuilder = vkb::SwapchainBuilder{_chosenGPU, _device, _surface};
-
-    // use this if u need to test the Color32 struct, otherwise the displayed color will be slightly different, probably brighter.
-    VkSurfaceFormatKHR surfaceFormat = {};
-    surfaceFormat.colorSpace = VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
-    surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
-
-    vkb::Result<vkb::Swapchain> vkbSwapchainRet = swapchainBuilder
-        .set_desired_format(surfaceFormat)
-        // .use_default_format_selection()
-        .build()
-        ;
-    
-    if (!vkbSwapchainRet.has_value())
-    {
-        std::cerr << "Failed to create swapchain. VkResult: " << vkbSwapchainRet.vk_result() << std::endl;
-        return false;
-    }
-    
-    vkb::Swapchain vkbSwapchain = vkbSwapchainRet.value();
-
     VkExtent2D windowExtent = GetWindowExtent();
-    vkbSwapchain.extent = windowExtent;
-    //use vsync present mode
-    vkbSwapchain.present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    CreateSwapchain(windowExtent);
+    // TODO: Should GetWindowExtent() or _swapchainExtent be used?
+    windowExtent = _swapchainExtent;
 
-    //store swapchain and its related images
-    _swapchain = vkbSwapchain.swapchain;
-    _swapchainImages = vkbSwapchain.get_images().value();
-    _swapchainImageViews = vkbSwapchain.get_image_views().value();
+    // //depth image size will match the window
+    // VkExtent3D depthImageExtent{
+    //     windowExtent.width,
+    //     windowExtent.height,
+    //     1
+    // };
 
-    _swapchainImageFormat = vkbSwapchain.image_format;
+    // //hardcoding the depth format to 32 bit float
+    // _depthFormat = VK_FORMAT_D32_SFLOAT;
 
+    // //the depth image will be an image with the format we selected and Depth Attachment usage flag
+    // VkImageCreateInfo dimg_info = VkExtImageCreateInfo(_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
 
+    // //for the depth image, we want to allocate it from GPU local memory
+    // VmaAllocationCreateInfo dimg_allocinfo = {};
+    // dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    // dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    //depth image size will match the window
-    VkExtent3D depthImageExtent{
-        windowExtent.width,
-        windowExtent.height,
-        1
-    };
+    // //allocate and create the image
+    // VkResult result = vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &_depthImage._image, &_depthImage._allocation, nullptr);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create depth image: " << result << std::endl;
+    //     return false;
+    // }
 
-    //hardcoding the depth format to 32 bit float
-    _depthFormat = VK_FORMAT_D32_SFLOAT;
+    // //build an image-view for the depth image to use for rendering
+    // VkImageViewCreateInfo dview_info = VkExtImageviewCreateInfo(_depthFormat, _depthImage._image, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    //the depth image will be an image with the format we selected and Depth Attachment usage flag
-    VkImageCreateInfo dimg_info = VkExtImageCreateInfo(_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
-
-    //for the depth image, we want to allocate it from GPU local memory
-    VmaAllocationCreateInfo dimg_allocinfo = {};
-    dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    //allocate and create the image
-    VkResult result = vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &_depthImage._image, &_depthImage._allocation, nullptr);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create depth image: " << result << std::endl;
-        return false;
-    }
-
-    //build an image-view for the depth image to use for rendering
-    VkImageViewCreateInfo dview_info = VkExtImageviewCreateInfo(_depthFormat, _depthImage._image, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    result = vkCreateImageView(_device, &dview_info, nullptr, &_depthImageView);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create Vulkan image view: " << result << std::endl;
-        return false;
-    }
+    // result = vkCreateImageView(_device, &dview_info, nullptr, &_depthImageView);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create Vulkan image view: " << result << std::endl;
+    //     return false;
+    // }
 
     //add to deletion queues
     // _mainDeletionQueue.PushDeletor
@@ -361,293 +343,286 @@ bool RenderEngine::InitSwapchain()
 
 bool RenderEngine::InitCommands()
 {
-    // Create a command pool for commands submitted to the graphics queue.
-    // We also want the pool to allow for resetting of individual command buffers
-    VkCommandPoolCreateInfo commandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkResult result = vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create command pool: " << result << std::endl;
-        return false;
-    }
+    // // Create a command pool for commands submitted to the graphics queue.
+    // // We also want the pool to allow for resetting of individual command buffers
+    // VkCommandPoolCreateInfo commandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    // VkResult result = vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create command pool: " << result << std::endl;
+    //     return false;
+    // }
 
-    // Allocate the default command buffer that we will use for rendering
-    VkCommandBufferAllocateInfo cmdAllocInfo = VkExtCommandBufferAllocateInfo(_commandPool, 1);
-    result = vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to allocate main command buffer: " << result << std::endl;
-        return false;
-    }
+    // // Allocate the default command buffer that we will use for rendering
+    // VkCommandBufferAllocateInfo cmdAllocInfo = VkExtCommandBufferAllocateInfo(_commandPool, 1);
+    // result = vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to allocate main command buffer: " << result << std::endl;
+    //     return false;
+    // }
 
-    // Create pool for upload context
-    VkCommandPoolCreateInfo uploadCommandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily);
-    result = vkCreateCommandPool(_device, &uploadCommandPoolInfo, nullptr, &_uploadContext._commandPool);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create upload command pool: " << result << std::endl;
-        return false;
-    }
+    // // Create pool for upload context
+    // VkCommandPoolCreateInfo uploadCommandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily);
+    // result = vkCreateCommandPool(_device, &uploadCommandPoolInfo, nullptr, &_uploadContext._commandPool);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create upload command pool: " << result << std::endl;
+    //     return false;
+    // }
 
-    _mainDeletionQueue.PushDeletor
-    (
-        [=]()
-        {
-            vkDestroyCommandPool(_device, _uploadContext._commandPool, nullptr);
-        }
-    );
+    // _mainDeletionQueue.PushDeletor
+    // (
+    //     [=]()
+    //     {
+    //         vkDestroyCommandPool(_device, _uploadContext._commandPool, nullptr);
+    //     }
+    // );
 
-    // Allocate the default command buffer that we will use for the instant commands
-    VkCommandBufferAllocateInfo cmdAllocInfo2 = VkExtCommandBufferAllocateInfo(_uploadContext._commandPool, 1);
-    result = vkAllocateCommandBuffers(_device, &cmdAllocInfo2, &_uploadContext._commandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to allocate upload command buffer: " << result << std::endl;
-        return false;
-    }
+    // // Allocate the default command buffer that we will use for the instant commands
+    // VkCommandBufferAllocateInfo cmdAllocInfo2 = VkExtCommandBufferAllocateInfo(_uploadContext._commandPool, 1);
+    // result = vkAllocateCommandBuffers(_device, &cmdAllocInfo2, &_uploadContext._commandBuffer);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to allocate upload command buffer: " << result << std::endl;
+    //     return false;
+    // }
 
     return true;
 }
 
 bool RenderEngine::InitRenderPass()
 {
-    // ATTACHMENTS
+    // // ATTACHMENTS
 
-    VkAttachmentDescription color_attachment = {};
+    // VkAttachmentDescription color_attachment = {};
     
-    color_attachment.format = _swapchainImageFormat; // The attachment will have the format needed by the swapchain
-    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 1 sample, we won't be doing MSAA 
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // We Clear when this attachment is loaded
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the render pass ends
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // We don't care about stencil
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // We don't care about stencil
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know nor care about the starting layout of the attachment
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the render pass ends, the image has to be on a layout ready for display
+    // color_attachment.format = _swapchainImageFormat; // The attachment will have the format needed by the swapchain
+    // color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 1 sample, we won't be doing MSAA 
+    // color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // We Clear when this attachment is loaded
+    // color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the render pass ends
+    // color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // We don't care about stencil
+    // color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // We don't care about stencil
+    // color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know nor care about the starting layout of the attachment
+    // color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the render pass ends, the image has to be on a layout ready for display
 
-    VkAttachmentReference color_attachment_ref = {};
-    color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent render pass itself
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    // VkAttachmentReference color_attachment_ref = {};
+    // color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent render pass itself
+    // color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
-    VkAttachmentDescription depth_attachment = {};
-    depth_attachment.flags = 0;
-    depth_attachment.format = _depthFormat;
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    // VkAttachmentDescription depth_attachment = {};
+    // depth_attachment.flags = 0;
+    // depth_attachment.format = _depthFormat;
+    // depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    // depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    // depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference depth_attachment_ref = {};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    // VkAttachmentReference depth_attachment_ref = {};
+    // depth_attachment_ref.attachment = 1;
+    // depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    // Array of 2 attachments, one for the color, and other for depth
-    VkAttachmentDescription attachments[2] = { color_attachment, depth_attachment };
+    // // Array of 2 attachments, one for the color, and other for depth
+    // VkAttachmentDescription attachments[2] = { color_attachment, depth_attachment };
 
-    // SUBPASS
+    // // SUBPASS
 
-    // We are going to create 1 subpass, which is the minimum you can do
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref; // Hook the depth attachment into the subpass
+    // // We are going to create 1 subpass, which is the minimum you can do
+    // VkSubpassDescription subpass = {};
+    // subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    // subpass.colorAttachmentCount = 1;
+    // subpass.pColorAttachments = &color_attachment_ref;
+    // subpass.pDepthStencilAttachment = &depth_attachment_ref; // Hook the depth attachment into the subpass
 
-    // DEPENDENCIES
+    // // DEPENDENCIES
 
-    VkSubpassDependency dependency = {};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // VkSubpassDependency dependency = {};
+    // dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    // dependency.dstSubpass = 0;
+    // dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // dependency.srcAccessMask = 0;
+    // dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    VkSubpassDependency depth_dependency = {};
-    depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    depth_dependency.dstSubpass = 0;
-    depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    depth_dependency.srcAccessMask = 0;
-    depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    // VkSubpassDependency depth_dependency = {};
+    // depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    // depth_dependency.dstSubpass = 0;
+    // depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    // depth_dependency.srcAccessMask = 0;
+    // depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    // depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    VkSubpassDependency dependencies[2] = { dependency, depth_dependency };
+    // VkSubpassDependency dependencies[2] = { dependency, depth_dependency };
 
-    // RENDER PASS
+    // // RENDER PASS
 
-    VkRenderPassCreateInfo render_pass_info = {};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = 2;
-    render_pass_info.pAttachments = &attachments[0];
-    render_pass_info.subpassCount = 1; // Connect the subpass to the info
-    render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 2;
-    render_pass_info.pDependencies = &dependencies[0];
+    // VkRenderPassCreateInfo render_pass_info = {};
+    // render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    // render_pass_info.attachmentCount = 2;
+    // render_pass_info.pAttachments = &attachments[0];
+    // render_pass_info.subpassCount = 1; // Connect the subpass to the info
+    // render_pass_info.pSubpasses = &subpass;
+    // render_pass_info.dependencyCount = 2;
+    // render_pass_info.pDependencies = &dependencies[0];
 
-    VkResult result = vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create render pass: " << result << std::endl;
-        return false;
-    }
+    // VkResult result = vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create render pass: " << result << std::endl;
+    //     return false;
+    // }
 
     return true;
 }
 
 bool RenderEngine::InitFramebuffers()
 {
-    // Create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
-    VkFramebufferCreateInfo fb_info = {};
-    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    fb_info.pNext = nullptr;
+    // // Create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
+    // VkFramebufferCreateInfo fb_info = {};
+    // fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    // fb_info.pNext = nullptr;
 
-    fb_info.renderPass = _renderPass;
-    fb_info.attachmentCount = 1;
-    VkExtent2D windowExtent = GetWindowExtent();
-    fb_info.width = windowExtent.width;
-    fb_info.height = windowExtent.height;
-    fb_info.layers = 1;
+    // fb_info.renderPass = _renderPass;
+    // fb_info.attachmentCount = 1;
+    // VkExtent2D windowExtent = GetWindowExtent();
+    // fb_info.width = windowExtent.width;
+    // fb_info.height = windowExtent.height;
+    // fb_info.layers = 1;
 
-    // Grab how many images we have in the swapchain
-    const size_t swapchain_imagecount = _swapchainImages.size();
-    _framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+    // // Grab how many images we have in the swapchain
+    // const size_t swapchain_imagecount = _swapchainImages.size();
+    // _framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
 
-    // Create framebuffers for each of the swapchain image views
-    for (int i = 0; i < swapchain_imagecount; i++)
-    {
-        VkImageView attachments[2];
-        attachments[0] = _swapchainImageViews[i];
-        attachments[1] = _depthImageView;
+    // // Create framebuffers for each of the swapchain image views
+    // for (int i = 0; i < swapchain_imagecount; i++)
+    // {
+    //     VkImageView attachments[2];
+    //     attachments[0] = _swapchainImageViews[i];
+    //     attachments[1] = _depthImageView;
 
-        fb_info.pAttachments = attachments;
-        fb_info.attachmentCount = 2;
+    //     fb_info.pAttachments = attachments;
+    //     fb_info.attachmentCount = 2;
 
-        VkResult result = vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]);
-        if (result != VK_SUCCESS)
-        {
-            std::cerr << "Failed to create framebuffer " << i << ": " << result << std::endl;
-            return false;
-        }
-    }
+    //     VkResult result = vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]);
+    //     if (result != VK_SUCCESS)
+    //     {
+    //         std::cerr << "Failed to create framebuffer " << i << ": " << result << std::endl;
+    //         return false;
+    //     }
+    // }
 
     return true;
 }
 
 bool RenderEngine::InitSyncStructures()
 {
-    // We want to create the fence with the Create Signaled flag, so we can wait on it before using it on a GPU command (for the first frame)
-    VkFenceCreateInfo fenceCreateInfo = VkExtFenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+    // // We want to create the fence with the Create Signaled flag, so we can wait on it before using it on a GPU command (for the first frame)
+    // VkFenceCreateInfo fenceCreateInfo = VkExtFenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
 
-    VkResult result = vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create render fence: " << result << std::endl;
-        return false;
-    }
+    // VkResult result = vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create render fence: " << result << std::endl;
+    //     return false;
+    // }
 
-    VkFenceCreateInfo uploadFenceCreateInfo = VkExtFenceCreateInfo();
+    // VkFenceCreateInfo uploadFenceCreateInfo = VkExtFenceCreateInfo();
 
-    result = vkCreateFence(_device, &uploadFenceCreateInfo, nullptr, &_uploadContext._uploadFence);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create upload fence: " << result << std::endl;
-        return false;
-    }
+    // result = vkCreateFence(_device, &uploadFenceCreateInfo, nullptr, &_uploadContext._uploadFence);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create upload fence: " << result << std::endl;
+    //     return false;
+    // }
 
-    // For the semaphores we don't need any flags
-    VkSemaphoreCreateInfo semaphoreCreateInfo = VkExtSemaphoreCreateInfo();
+    // // For the semaphores we don't need any flags
+    // VkSemaphoreCreateInfo semaphoreCreateInfo = VkExtSemaphoreCreateInfo();
 
-    result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create present semaphore: " << result << std::endl;
-        return false;
-    }
+    // result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create present semaphore: " << result << std::endl;
+    //     return false;
+    // }
 
-    result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to create render semaphore: " << result << std::endl;
-        return false;
-    }
+    // result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to create render semaphore: " << result << std::endl;
+    //     return false;
+    // }
 
-    _mainDeletionQueue.PushDeletor
-    (
-        [=]()
-        {
-            vkDestroyFence(_device, _uploadContext._uploadFence, nullptr);
-            vkDestroyFence(_device, _renderFence, nullptr);
+    // _mainDeletionQueue.PushDeletor
+    // (
+    //     [=]()
+    //     {
+    //         vkDestroyFence(_device, _uploadContext._uploadFence, nullptr);
+    //         vkDestroyFence(_device, _renderFence, nullptr);
 
-            vkDestroySemaphore(_device, _presentSemaphore, nullptr);
-            vkDestroySemaphore(_device, _renderSemaphore, nullptr);
-        }
-    );
+    //         vkDestroySemaphore(_device, _presentSemaphore, nullptr);
+    //         vkDestroySemaphore(_device, _renderSemaphore, nullptr);
+    //     }
+    // );
 
     return true;
 }
 
 bool RenderEngine::InitDescriptors()
 {
-    // Return early while we're still implementing this
-    return true;
+    // //create a descriptor pool that will hold 10 sets with 1 image each
+    // std::vector<DescriptorAllocator::PoolSizeRatio> sizes =
+    // {
+    //     { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+    // };
 
-    //create a descriptor pool that will hold 10 sets with 1 image each
-	std::vector<DescriptorAllocator::PoolSizeRatio> sizes =
-	{
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-	};
+    // _descriptorAllocator.InitPool(_device, 10, sizes);
 
-	_descriptorAllocator.InitPool(_device, 10, sizes);
-
-    _objectDescriptorSetLayout = DescriptorLayoutBuilder{}
-        .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-        .Build(_device, VK_SHADER_STAGE_COMPUTE_BIT)
-        ;
+    // _objectDescriptorSetLayout = DescriptorLayoutBuilder{}
+    //     .AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+    //     .Build(_device, VK_SHADER_STAGE_COMPUTE_BIT)
+    //     ;
     
-    _objectDescriptorSet = _descriptorAllocator.Allocate(_device, _objectDescriptorSetLayout);
+    // _objectDescriptorSet = _descriptorAllocator.Allocate(_device, _objectDescriptorSetLayout);
 
-	// VkDescriptorImageInfo imgInfo{};
-	// imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-	// imgInfo.imageView = _drawImage.imageView;
-	
-	// VkWriteDescriptorSet drawImageWrite = {};
-	// drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	// drawImageWrite.pNext = nullptr;
-	
-	// drawImageWrite.dstBinding = 0;
-	// drawImageWrite.dstSet = _drawImageDescriptors;
-	// drawImageWrite.descriptorCount = 1;
-	// drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	// drawImageWrite.pImageInfo = &imgInfo;
+    // VkDescriptorImageInfo imgInfo{};
+    // imgInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // imgInfo.imageView = _drawImage.imageView;
+    
+    // VkWriteDescriptorSet drawImageWrite = {};
+    // drawImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    // drawImageWrite.pNext = nullptr;
+    
+    // drawImageWrite.dstBinding = 0;
+    // drawImageWrite.dstSet = _drawImageDescriptors;
+    // drawImageWrite.descriptorCount = 1;
+    // drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    // drawImageWrite.pImageInfo = &imgInfo;
 
-	// vkUpdateDescriptorSets(_device, 1, &drawImageWrite, 0, nullptr);
+    // vkUpdateDescriptorSets(_device, 1, &drawImageWrite, 0, nullptr);
 
-	// //make sure both the descriptor allocator and the new layout get cleaned up properly
-	// _mainDeletionQueue.push_function([&]() {
-	// 	globalDescriptorAllocator.destroy_pool(_device);
+    // //make sure both the descriptor allocator and the new layout get cleaned up properly
+    // _mainDeletionQueue.push_function([&]() {
+    //     globalDescriptorAllocator.destroy_pool(_device);
 
-	// 	vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
-	// });
+    //     vkDestroyDescriptorSetLayout(_device, _drawImageDescriptorLayout, nullptr);
+    // });
 
     return true;
 }
 
 bool RenderEngine::InitPipelines()
 {
-    // RasterizationShaderProgram program{};
-    // program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "Engine/shaders/test.vert.spv");
-    // program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "Engine/shaders/test.frag.spv");
+    RasterizationShaderProgram program{};
+    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/basic.vert.spv");
+    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/basic.frag.spv");
 
     // Material mat{};
     // mat.shaderProgram = program;
     // mat.fields == ShaderReflector::Merge(ShaderReflector::Reflect(program.vert + program.frag + ...));
-
-    RasterizationShaderProgram program{};
-    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/basic.vert.spv");
-    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/basic.frag.spv");
 
     // // Define the uniform buffer binding
     // VkDescriptorSetLayoutBinding objectUboBinding{};
@@ -686,23 +661,23 @@ bool RenderEngine::InitPipelines()
     //     return false;
     // }
 
-    RenderPipelineLayout pipelineLayout{};
-    pipelineLayout.SetDevice(_device)
-        // .AddDescriptorSetLayout(_objectDescriptorSetLayout)
-        ;
-    _opaquePipelineLayout = pipelineLayout.GetLayout();
+    // RenderPipelineLayout pipelineLayout{};
+    // pipelineLayout.SetDevice(_device)
+    //     // .AddDescriptorSetLayout(_objectDescriptorSetLayout)
+    //     ;
+    // _opaquePipelineLayout = pipelineLayout.GetLayout();
 
-    RenderPipeline pipeline{};
-    pipeline.SetDevice(_device)
-        .SetRenderPass(_renderPass)
-        .SetViewport(GetWindowExtent())
-        .SetPipelineLayout(_opaquePipelineLayout)
-        .SetVertexInput(Vertex::GetVertexInputInfo())
-        .AddShader(*program.vert.get())
-        .AddShader(*program.frag.get())
-        .SetCullMode(VK_CULL_MODE_NONE)
-        ;
-    _opaquePipeline = pipeline.GetPipeline();
+    // RenderPipeline pipeline{};
+    // pipeline.SetDevice(_device)
+    //     .SetRenderPass(_renderPass)
+    //     .SetViewport(GetWindowExtent())
+    //     .SetPipelineLayout(_opaquePipelineLayout)
+    //     .SetVertexInput(Vertex::GetVertexInputInfo())
+    //     .AddShader(*program.vert.get())
+    //     .AddShader(*program.frag.get())
+    //     .SetCullMode(VK_CULL_MODE_NONE)
+    //     ;
+    // _opaquePipeline = pipeline.GetPipeline();
 
     // //build the stage-create-info for both vertex and fragment stages. This lets the pipeline know the shader modules per stage
     // PipelineBuilder pipelineBuilder;
@@ -848,9 +823,15 @@ bool RenderEngine::InitPipelines()
     return true;
 }
 
-void RenderEngine::CleanupVulkan()
+void RenderEngine::CleanupSwapchain()
 {
+    vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 
+    // Destroy swapchain resources
+    for (size_t i = 0; i < _swapchainImageViews.size(); ++i)
+    {
+        vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
+    }
 }
 
 VkExtent2D RenderEngine::GetWindowExtent() const
@@ -863,227 +844,235 @@ VkExtent2D RenderEngine::GetWindowExtent() const
     };
 }
 
-void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
+void RenderEngine::CreateSwapchain(const VkExtent2D extent)
 {
-    VkCommandBuffer cmd = _uploadContext._commandBuffer;
-    
-    VkCommandBufferBeginInfo cmdBeginInfo = VkExtCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    VkResult result = vkBeginCommandBuffer(cmd, &cmdBeginInfo);
-    if (result != VK_SUCCESS)
+    vkb::SwapchainBuilder swapchainBuilder{ _chosenGPU, _device, _surface };
+
+    _swapchainImageFormat = VK_FORMAT_B8G8R8A8_SNORM;
+
+    VkSurfaceFormatKHR surfaceFormat{};
+    surfaceFormat.format = _swapchainImageFormat;
+    surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+    auto swapchainResult = swapchainBuilder
+        .set_desired_format(surfaceFormat)
+        // Using v-sync present mode
+        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+        .set_desired_extent(extent.width, extent.height)
+        .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+        .build()
+        ;
+
+    // Check if swapchain creation was successful before proceeding
+    if (!swapchainResult)
     {
-        std::cerr << "Failed to begin command buffer: " << result << std::endl;
+        std::cerr << "Failed to create a swapchain. Error: " << swapchainResult.error().message() << std::endl;
         return;
     }
     
-    function(cmd);
+    vkb::Swapchain vkbSwapchain = swapchainResult.value();
     
-    result = vkEndCommandBuffer(cmd);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to end command buffer: " << result << std::endl;
-        return;
-    }
-    
-    VkSubmitInfo submit = VkExtSubmitInfo(&cmd);
-    result = vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to submit to queue: " << result << std::endl;
-        return;
-    }
-    
-    vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
-    vkResetFences(_device, 1, &_uploadContext._uploadFence);
-    vkResetCommandPool(_device, _uploadContext._commandPool, 0);
+    // Store the swapchain and its related images and extent
+    _swapchainExtent = vkbSwapchain.extent;
+    _swapchain = vkbSwapchain.swapchain;
+    _swapchainImages = vkbSwapchain.get_images().value();
+    _swapchainImageViews = vkbSwapchain.get_image_views().value();
 }
 
-void RenderEngine::CreateTriangleBuffers()
+void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
 {
-    // Triangle data
-    std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f, 0.0f}, Color32::RED},    // 0: bottom-left
-        {{ 0.5f, -0.5f, 0.0f}, Color32::GREEN},  // 1: bottom-right
-        {{ 0.0f,  0.5f, 0.0f}, Color32::BLUE}    // 2: top
-    };
+    // VkCommandBuffer cmd = _uploadContext._commandBuffer;
     
-    // Counter-clockwise winding: 0 → 2 → 1 (bottom-left → top → bottom-right)
-    std::vector<uint16_t> indices = {0, 2, 1};
-
-    
-    // // Create buffers with error handling
-    // auto vertexBufferOpt = CreateBuffer(vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    // if (!vertexBufferOpt.has_value()) {
-    //     throw std::runtime_error("Failed to create vertex buffer");
+    // VkCommandBufferBeginInfo cmdBeginInfo = VkExtCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    // VkResult result = vkBeginCommandBuffer(cmd, &cmdBeginInfo);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to begin command buffer: " << result << std::endl;
+    //     return;
     // }
-    // _triangleVertexBuffer = vertexBufferOpt.value();
     
-    // auto indexBufferOpt = CreateBuffer(indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    // if (!indexBufferOpt.has_value()) {
-    //     throw std::runtime_error("Failed to create index buffer");
+    // function(cmd);
+    
+    // result = vkEndCommandBuffer(cmd);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to end command buffer: " << result << std::endl;
+    //     return;
     // }
-    // _triangleIndexBuffer = indexBufferOpt.value();
+    
+    // VkSubmitInfo submit = VkExtSubmitInfo(&cmd);
+    // result = vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to submit to queue: " << result << std::endl;
+    //     return;
+    // }
+    
+    // vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
+    // vkResetFences(_device, 1, &_uploadContext._uploadFence);
+    // vkResetCommandPool(_device, _uploadContext._commandPool, 0);
 }
 
 void RenderEngine::PreDraw()
 {
-    // Start the Dear ImGui frame
-    // ImGui_ImplVulkan_NewFrame();
-    // ImGui_ImplSDL2_NewFrame();
-    // ImGui::NewFrame();
+    // // Start the Dear ImGui frame
+    // // ImGui_ImplVulkan_NewFrame();
+    // // ImGui_ImplSDL2_NewFrame();
+    // // ImGui::NewFrame();
 
-    //wait until the GPU has finished rendering the last frame. Timeout of 1 second
-    VkResult result = vkWaitForFences(_device, 1, &_renderFence, true, 1000000000);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to wait for fence: " << result << std::endl;
-        return;
-    }
+    // //wait until the GPU has finished rendering the last frame. Timeout of 1 second
+    // VkResult result = vkWaitForFences(_device, 1, &_renderFence, true, 1000000000);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to wait for fence: " << result << std::endl;
+    //     return;
+    // }
 
-    result = vkResetFences(_device, 1, &_renderFence);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to reset fence: " << result << std::endl;
-        return;
-    }
+    // result = vkResetFences(_device, 1, &_renderFence);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to reset fence: " << result << std::endl;
+    //     return;
+    // }
 
-    //request image from the swapchain, one second timeout
-    result = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to acquire image from swapchain: " << result << std::endl;
-        return;
-    }
+    // //request image from the swapchain, one second timeout
+    // result = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, _presentSemaphore, nullptr, &swapchainImageIndex);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to acquire image from swapchain: " << result << std::endl;
+    //     return;
+    // }
 
-    //now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
-    result = vkResetCommandBuffer(_mainCommandBuffer, 0);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to reset command buffer: " << result << std::endl;
-        return;
-    }
+    // //now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
+    // result = vkResetCommandBuffer(_mainCommandBuffer, 0);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to reset command buffer: " << result << std::endl;
+    //     return;
+    // }
 
-    //begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
-    VkCommandBufferBeginInfo cmdBeginInfo = {};
-    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmdBeginInfo.pNext = nullptr;
+    // //begin the command buffer recording. We will use this command buffer exactly once, so we want to let Vulkan know that
+    // VkCommandBufferBeginInfo cmdBeginInfo = {};
+    // cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    // cmdBeginInfo.pNext = nullptr;
 
-    cmdBeginInfo.pInheritanceInfo = nullptr;
-    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    // cmdBeginInfo.pInheritanceInfo = nullptr;
+    // cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    result = vkBeginCommandBuffer(_mainCommandBuffer, &cmdBeginInfo);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to begin command buffer: " << result << std::endl;
-        return;
-    }
+    // result = vkBeginCommandBuffer(_mainCommandBuffer, &cmdBeginInfo);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to begin command buffer: " << result << std::endl;
+    //     return;
+    // }
 
-    VkClearValue clearValue = {};
-    // float flash = abs(sin(_frameNumber / 3840.f));
-    // clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
-    Color32 color = Color32::FromHex("#181818");
-    clearValue.color = { { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f } };
+    // VkClearValue clearValue = {};
+    // // float flash = abs(sin(_frameNumber / 3840.f));
+    // // clearValue.color = { { 0.0f, 0.0f, flash, 1.0f } };
+    // Color32 color = Color32::FromHex("#181818");
+    // clearValue.color = { { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f } };
 
-    //clear depth at 1
-	VkClearValue depthClear;
-	depthClear.depthStencil.depth = 1.f;
+    // //clear depth at 1
+    // VkClearValue depthClear;
+    // depthClear.depthStencil.depth = 1.f;
 
-    VkClearValue clearValues[] = { clearValue, depthClear };
+    // VkClearValue clearValues[] = { clearValue, depthClear };
 
-    //start the main render pass.
-    //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
-    VkRenderPassBeginInfo rpInfo = {};
-    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    rpInfo.pNext = nullptr;
+    // //start the main render pass.
+    // //We will use the clear color from above, and the framebuffer of the index the swapchain gave us
+    // VkRenderPassBeginInfo rpInfo = {};
+    // rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    // rpInfo.pNext = nullptr;
 
-    rpInfo.renderPass = _renderPass;
-    rpInfo.renderArea.offset.x = 0;
-    rpInfo.renderArea.offset.y = 0;
-    rpInfo.renderArea.extent = GetWindowExtent();
-    rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
+    // rpInfo.renderPass = _renderPass;
+    // rpInfo.renderArea.offset.x = 0;
+    // rpInfo.renderArea.offset.y = 0;
+    // rpInfo.renderArea.extent = GetWindowExtent();
+    // rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
 
-    //connect clear values
-    rpInfo.clearValueCount = 2;
-    rpInfo.pClearValues = &clearValues[0];
+    // //connect clear values
+    // rpInfo.clearValueCount = 2;
+    // rpInfo.pClearValues = &clearValues[0];
 
-    vkCmdBeginRenderPass(_mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+    // vkCmdBeginRenderPass(_mainCommandBuffer, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void RenderEngine::PostDraw()
 {
-    // Rendering imgui
-    // ImGui::Render();
-    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), _mainCommandBuffer);
+    // // Rendering imgui
+    // // ImGui::Render();
+    // // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), _mainCommandBuffer);
 
-    //finalize the render pass
-    vkCmdEndRenderPass(_mainCommandBuffer);
-    //finalize the command buffer (we can no longer add commands, but it can now be executed)
-    VkResult result = vkEndCommandBuffer(_mainCommandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to end command buffer: " << result << std::endl;
-        return;
-    }
-
-
-    //prepare the submission to the queue.
-    //we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
-    //we will signal the _renderSemaphore, to signal that rendering has finished
-
-    VkSubmitInfo submit = {};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.pNext = nullptr;
-
-    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    submit.pWaitDstStageMask = &waitStage;
-
-    submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &_presentSemaphore;
-
-    submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &_renderSemaphore;
-
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &_mainCommandBuffer;
-
-    //submit command buffer to the queue and execute it.
-    // _renderFence will now block until the graphic commands finish execution
-    result = vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to submit queue: " << result << std::endl;
-        return;
-    }
+    // //finalize the render pass
+    // vkCmdEndRenderPass(_mainCommandBuffer);
+    // //finalize the command buffer (we can no longer add commands, but it can now be executed)
+    // VkResult result = vkEndCommandBuffer(_mainCommandBuffer);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to end command buffer: " << result << std::endl;
+    //     return;
+    // }
 
 
-    // this will put the image we just rendered into the visible window.
-    // we want to wait on the _renderSemaphore for that,
-    // as it's necessary that drawing commands have finished before the image is displayed to the user
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pNext = nullptr;
+    // //prepare the submission to the queue.
+    // //we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+    // //we will signal the _renderSemaphore, to signal that rendering has finished
 
-    presentInfo.pSwapchains = &_swapchain;
-    presentInfo.swapchainCount = 1;
+    // VkSubmitInfo submit = {};
+    // submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    // submit.pNext = nullptr;
 
-    presentInfo.pWaitSemaphores = &_renderSemaphore;
-    presentInfo.waitSemaphoreCount = 1;
+    // VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-    presentInfo.pImageIndices = &swapchainImageIndex;
+    // submit.pWaitDstStageMask = &waitStage;
 
-    result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-    {
-        // Ignore for now
-    }
-    else if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to present queue: " << result << std::endl;
-        return;
-    }
+    // submit.waitSemaphoreCount = 1;
+    // submit.pWaitSemaphores = &_presentSemaphore;
 
-    // TODO: replace with multiple semaphores... one for each frame buffer
-    vkDeviceWaitIdle(_device);
+    // submit.signalSemaphoreCount = 1;
+    // submit.pSignalSemaphores = &_renderSemaphore;
+
+    // submit.commandBufferCount = 1;
+    // submit.pCommandBuffers = &_mainCommandBuffer;
+
+    // //submit command buffer to the queue and execute it.
+    // // _renderFence will now block until the graphic commands finish execution
+    // result = vkQueueSubmit(_graphicsQueue, 1, &submit, _renderFence);
+    // if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to submit queue: " << result << std::endl;
+    //     return;
+    // }
+
+
+    // // this will put the image we just rendered into the visible window.
+    // // we want to wait on the _renderSemaphore for that,
+    // // as it's necessary that drawing commands have finished before the image is displayed to the user
+    // VkPresentInfoKHR presentInfo = {};
+    // presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    // presentInfo.pNext = nullptr;
+
+    // presentInfo.pSwapchains = &_swapchain;
+    // presentInfo.swapchainCount = 1;
+
+    // presentInfo.pWaitSemaphores = &_renderSemaphore;
+    // presentInfo.waitSemaphoreCount = 1;
+
+    // presentInfo.pImageIndices = &swapchainImageIndex;
+
+    // result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    // if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    // {
+    //     // Ignore for now
+    // }
+    // else if (result != VK_SUCCESS)
+    // {
+    //     std::cerr << "Failed to present queue: " << result << std::endl;
+    //     return;
+    // }
+
+    // // TODO: replace with multiple semaphores... one for each frame buffer
+    // vkDeviceWaitIdle(_device);
 }
 
 } // namespace velecs::graphics
