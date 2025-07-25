@@ -155,7 +155,7 @@ private:
 
     void CleanupSwapchain();
 
-    FrameData GetCurrentFrame();
+    FrameData& GetCurrentFrame();
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);

@@ -733,7 +733,7 @@ void RenderEngine::CleanupSwapchain()
     }
 }
 
-FrameData RenderEngine::GetCurrentFrame()
+FrameData& RenderEngine::GetCurrentFrame()
 {
     return _frames[_frameNumber % FRAME_OVERLAP];
 }
