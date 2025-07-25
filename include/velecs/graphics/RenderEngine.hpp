@@ -120,7 +120,7 @@ private:
 
     DeletionQueue _mainDeletionQueue;
 
-    // VmaAllocator _allocator{nullptr};
+    VmaAllocator _allocator{nullptr};
 
     // VkImageView _depthImageView{VK_NULL_HANDLE};
     // AllocatedImage _depthImage;

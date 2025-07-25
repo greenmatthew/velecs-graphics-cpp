@@ -434,12 +434,23 @@ bool RenderEngine::InitVulkan()
     _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
     _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
-    // // Initialize the memory allocator
-    // VmaAllocatorCreateInfo allocatorInfo = {};
-    // allocatorInfo.physicalDevice = _chosenGPU;
-    // allocatorInfo.device = _device;
-    // allocatorInfo.instance = _instance;
-    // vmaCreateAllocator(&allocatorInfo, &_allocator);
+    // Initialize the VMA memory allocator
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.physicalDevice = _chosenGPU;
+    allocatorInfo.device = _device;
+    allocatorInfo.instance = _instance;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+    VkResult result = vmaCreateAllocator(&allocatorInfo, &_allocator);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create VMA allocator: " << result << std::endl;
+        return false;
+    }
+
+    _mainDeletionQueue.PushDeleter([&](){
+        vmaDestroyAllocator(_allocator);
+    });
 
     return true;
 }
