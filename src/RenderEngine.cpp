@@ -156,6 +156,11 @@ void RenderEngine::Cleanup()
     for (size_t i{0}; i < FRAME_OVERLAP; ++i)
     {
         vkDestroyCommandPool(_device, _frames[i].commandPool, nullptr);
+
+        // Also destroy sync objects
+		vkDestroyFence(_device, _frames[i].renderFence, nullptr);
+		vkDestroySemaphore(_device, _frames[i].renderSemaphore, nullptr);
+		vkDestroySemaphore(_device ,_frames[i].swapchainSemaphore, nullptr);
     }
 
     CleanupSwapchain();
@@ -384,182 +389,38 @@ bool RenderEngine::InitCommands()
     return true;
 }
 
-bool RenderEngine::InitRenderPass()
-{
-    // // ATTACHMENTS
-
-    // VkAttachmentDescription color_attachment = {};
-    
-    // color_attachment.format = _swapchainImageFormat; // The attachment will have the format needed by the swapchain
-    // color_attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 1 sample, we won't be doing MSAA 
-    // color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // We Clear when this attachment is loaded
-    // color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We keep the attachment stored when the render pass ends
-    // color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // We don't care about stencil
-    // color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // We don't care about stencil
-    // color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // We don't know nor care about the starting layout of the attachment
-    // color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // After the render pass ends, the image has to be on a layout ready for display
-
-    // VkAttachmentReference color_attachment_ref = {};
-    // color_attachment_ref.attachment = 0; // Attachment number will index into the pAttachments array in the parent render pass itself
-    // color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
-    // VkAttachmentDescription depth_attachment = {};
-    // depth_attachment.flags = 0;
-    // depth_attachment.format = _depthFormat;
-    // depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    // depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    // depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    // depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    // depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    // depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    // VkAttachmentReference depth_attachment_ref = {};
-    // depth_attachment_ref.attachment = 1;
-    // depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    // // Array of 2 attachments, one for the color, and other for depth
-    // VkAttachmentDescription attachments[2] = { color_attachment, depth_attachment };
-
-    // // SUBPASS
-
-    // // We are going to create 1 subpass, which is the minimum you can do
-    // VkSubpassDescription subpass = {};
-    // subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    // subpass.colorAttachmentCount = 1;
-    // subpass.pColorAttachments = &color_attachment_ref;
-    // subpass.pDepthStencilAttachment = &depth_attachment_ref; // Hook the depth attachment into the subpass
-
-    // // DEPENDENCIES
-
-    // VkSubpassDependency dependency = {};
-    // dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    // dependency.dstSubpass = 0;
-    // dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    // dependency.srcAccessMask = 0;
-    // dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    // dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    // VkSubpassDependency depth_dependency = {};
-    // depth_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    // depth_dependency.dstSubpass = 0;
-    // depth_dependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    // depth_dependency.srcAccessMask = 0;
-    // depth_dependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    // depth_dependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    // VkSubpassDependency dependencies[2] = { dependency, depth_dependency };
-
-    // // RENDER PASS
-
-    // VkRenderPassCreateInfo render_pass_info = {};
-    // render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    // render_pass_info.attachmentCount = 2;
-    // render_pass_info.pAttachments = &attachments[0];
-    // render_pass_info.subpassCount = 1; // Connect the subpass to the info
-    // render_pass_info.pSubpasses = &subpass;
-    // render_pass_info.dependencyCount = 2;
-    // render_pass_info.pDependencies = &dependencies[0];
-
-    // VkResult result = vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create render pass: " << result << std::endl;
-    //     return false;
-    // }
-
-    return true;
-}
-
-bool RenderEngine::InitFramebuffers()
-{
-    // // Create the framebuffers for the swapchain images. This will connect the render-pass to the images for rendering
-    // VkFramebufferCreateInfo fb_info = {};
-    // fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    // fb_info.pNext = nullptr;
-
-    // fb_info.renderPass = _renderPass;
-    // fb_info.attachmentCount = 1;
-    // VkExtent2D windowExtent = GetWindowExtent();
-    // fb_info.width = windowExtent.width;
-    // fb_info.height = windowExtent.height;
-    // fb_info.layers = 1;
-
-    // // Grab how many images we have in the swapchain
-    // const size_t swapchain_imagecount = _swapchainImages.size();
-    // _framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
-
-    // // Create framebuffers for each of the swapchain image views
-    // for (int i = 0; i < swapchain_imagecount; i++)
-    // {
-    //     VkImageView attachments[2];
-    //     attachments[0] = _swapchainImageViews[i];
-    //     attachments[1] = _depthImageView;
-
-    //     fb_info.pAttachments = attachments;
-    //     fb_info.attachmentCount = 2;
-
-    //     VkResult result = vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]);
-    //     if (result != VK_SUCCESS)
-    //     {
-    //         std::cerr << "Failed to create framebuffer " << i << ": " << result << std::endl;
-    //         return false;
-    //     }
-    // }
-
-    return true;
-}
-
 bool RenderEngine::InitSyncStructures()
 {
-    // // We want to create the fence with the Create Signaled flag, so we can wait on it before using it on a GPU command (for the first frame)
-    // VkFenceCreateInfo fenceCreateInfo = VkExtFenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+    // Create syncronization structures
+	// One fence to control when the gpu has finished rendering the frame,
+	// and 2 semaphores to synchronize rendering with swapchain
+	// We want the fence to start signalled so we can wait on it on the first frame
+	VkFenceCreateInfo fenceCreateInfo = VkExtFenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+	VkSemaphoreCreateInfo semaphoreCreateInfo = VkExtSemaphoreCreateInfo();
 
-    // VkResult result = vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create render fence: " << result << std::endl;
-    //     return false;
-    // }
+    for (size_t i{0}; i < FRAME_OVERLAP; ++i)
+    {
+        VkResult result = vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i].renderFence);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create fence: " << result << std::endl;
+            return false;
+        }
 
-    // VkFenceCreateInfo uploadFenceCreateInfo = VkExtFenceCreateInfo();
+        result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i].swapchainSemaphore);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create semaphore: " << result << std::endl;
+            return false;
+        }
 
-    // result = vkCreateFence(_device, &uploadFenceCreateInfo, nullptr, &_uploadContext._uploadFence);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create upload fence: " << result << std::endl;
-    //     return false;
-    // }
-
-    // // For the semaphores we don't need any flags
-    // VkSemaphoreCreateInfo semaphoreCreateInfo = VkExtSemaphoreCreateInfo();
-
-    // result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create present semaphore: " << result << std::endl;
-    //     return false;
-    // }
-
-    // result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create render semaphore: " << result << std::endl;
-    //     return false;
-    // }
-
-    // _mainDeletionQueue.PushDeletor
-    // (
-    //     [=]()
-    //     {
-    //         vkDestroyFence(_device, _uploadContext._uploadFence, nullptr);
-    //         vkDestroyFence(_device, _renderFence, nullptr);
-
-    //         vkDestroySemaphore(_device, _presentSemaphore, nullptr);
-    //         vkDestroySemaphore(_device, _renderSemaphore, nullptr);
-    //     }
-    // );
+        result = vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i].renderSemaphore);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create semaphore: " << result << std::endl;
+            return false;
+        }
+    }
 
     return true;
 }

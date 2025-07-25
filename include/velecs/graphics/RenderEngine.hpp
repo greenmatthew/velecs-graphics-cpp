@@ -145,14 +145,10 @@ private:
     bool InitVulkan();
     bool InitSwapchain();
     bool InitCommands();
-    bool InitRenderPass();
-    bool InitFramebuffers();
     bool InitSyncStructures();
     bool InitDescriptors();
     bool InitPipelines();
     
-    
-
     VkExtent2D GetWindowExtent() const;
 
     void CreateSwapchain(const VkExtent2D extent);

@@ -22,6 +22,10 @@ VkCommandBufferAllocateInfo VkExtCommandBufferAllocateInfo(
     VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY
 );
 
+VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags = 0);
+
+VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
+
 VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 
 VkPipelineVertexInputStateCreateInfo VkExtVertexInputStateCreateInfo();
@@ -35,10 +39,6 @@ VkPipelineMultisampleStateCreateInfo VkExtMultisamplingStateCreateInfo();
 VkPipelineColorBlendAttachmentState VkExtColorBlendAttachmentState();
 
 VkPipelineLayoutCreateInfo VkExtPipelineLayoutCreateInfo();
-
-VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags = 0);
-
-VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
 
 VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
 

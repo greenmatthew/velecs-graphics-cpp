@@ -27,6 +27,11 @@ public:
     VkCommandPool commandPool{nullptr};
 	VkCommandBuffer mainCommandBuffer{nullptr};
 
+    VkSemaphore swapchainSemaphore{nullptr};
+    VkSemaphore renderSemaphore{nullptr};
+
+    VkFence renderFence{nullptr};
+
     // Constructors and Destructors
 
     /// @brief Default constructor.

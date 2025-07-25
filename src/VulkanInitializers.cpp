@@ -37,6 +37,24 @@ VkCommandBufferAllocateInfo VkExtCommandBufferAllocateInfo(
     return info;
 }
 
+VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags/* = 0*/)
+{
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.pNext = nullptr;
+    fenceCreateInfo.flags = flags;
+    return fenceCreateInfo;
+}
+
+VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags/* = 0*/)
+{
+    VkSemaphoreCreateInfo semCreateInfo = {};
+    semCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semCreateInfo.pNext = nullptr;
+    semCreateInfo.flags = flags;
+    return semCreateInfo;
+}
+
 VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule)
 {
     VkPipelineShaderStageCreateInfo info{};
@@ -138,24 +156,6 @@ VkPipelineLayoutCreateInfo VkExtPipelineLayoutCreateInfo()
     info.pushConstantRangeCount = 0;
     info.pPushConstantRanges = nullptr;
     return info;
-}
-
-VkFenceCreateInfo VkExtFenceCreateInfo(VkFenceCreateFlags flags)
-{
-    VkFenceCreateInfo fenceCreateInfo = {};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.pNext = nullptr;
-    fenceCreateInfo.flags = flags;
-    return fenceCreateInfo;
-}
-
-VkSemaphoreCreateInfo VkExtSemaphoreCreateInfo(VkSemaphoreCreateFlags flags)
-{
-    VkSemaphoreCreateInfo semCreateInfo = {};
-    semCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semCreateInfo.pNext = nullptr;
-    semCreateInfo.flags = flags;
-    return semCreateInfo;
 }
 
 VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
