@@ -395,9 +395,17 @@ bool RenderEngine::InitVulkan()
         return false;
     }
 
-    VkPhysicalDeviceVulkan13Features desiredFeatures{};
-    desiredFeatures.dynamicRendering = true;
-    desiredFeatures.synchronization2 = true;
+    // Vulkan 1.3 features
+    VkPhysicalDeviceVulkan13Features features13{};
+    features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    features13.dynamicRendering = true;
+    features13.synchronization2 = true;
+
+    // Vulkan 1.2 features
+	VkPhysicalDeviceVulkan12Features features12{};
+    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.bufferDeviceAddress = true;
+	features12.descriptorIndexing = true;
 
     // Use vkbootstrap to select a GPU.
     // We want a GPU that can write to the SDL surface and supports our version of Vulkan
@@ -405,7 +413,8 @@ bool RenderEngine::InitVulkan()
     auto selectorResult = selector
         .set_minimum_version(VULKAN_MAJOR_VERSION, VULKAN_MINOR_VERSION)
         .set_surface(_surface)
-        .set_required_features_13(desiredFeatures)
+        .set_required_features_13(features13)
+        .set_required_features_12(features12)
         .select()
         ;
 
