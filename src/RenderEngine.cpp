@@ -62,12 +62,10 @@ SDL_AppResult RenderEngine::Init()
 {
     if (!InitVulkan()        ) return SDL_APP_FAILURE;
     if (!InitSwapchain()     ) return SDL_APP_FAILURE;
-    // if (!InitCommands()      ) return SDL_APP_FAILURE;
-    // if (!InitRenderPass()    ) return SDL_APP_FAILURE;
-    // if (!InitFramebuffers()  ) return SDL_APP_FAILURE;
-    // if (!InitSyncStructures()) return SDL_APP_FAILURE;
-    // if (!InitDescriptors()   ) return SDL_APP_FAILURE;
-    // if (!InitPipelines()     ) return SDL_APP_FAILURE;
+    if (!InitCommands()      ) return SDL_APP_FAILURE;
+    if (!InitSyncStructures()) return SDL_APP_FAILURE;
+    if (!InitDescriptors()   ) return SDL_APP_FAILURE;
+    if (!InitPipelines()     ) return SDL_APP_FAILURE;
 
     _wasInitialized = true;
 
@@ -152,6 +150,14 @@ void RenderEngine::Cleanup()
 {
     if (!_wasInitialized) return;
 
+    // Make sure the GPU has stopped doing its things
+    vkDeviceWaitIdle(_device);
+
+    for (size_t i{0}; i < FRAME_OVERLAP; ++i)
+    {
+        vkDestroyCommandPool(_device, _frames[i].commandPool, nullptr);
+    }
+
     CleanupSwapchain();
 
     vkDestroySurfaceKHR(_instance, _surface, nullptr);
@@ -208,8 +214,9 @@ bool RenderEngine::InitVulkan()
             }
         }
         
-        if (!foundValidationLayer) {
-            std::cout << "WARNING: Validation layers requested but VK_LAYER_KHRONOS_validation not found!" << std::endl;
+        if (!foundValidationLayer)
+        {
+            std::cerr << "WARNING: Validation layers requested but VK_LAYER_KHRONOS_validation not found!" << std::endl;
         }
     }
 
@@ -271,9 +278,9 @@ bool RenderEngine::InitVulkan()
     _device = vkbDevice.device;
     _chosenGPU = physicalDevice.physical_device;
 
-    // // Use vkbootstrap to get a Graphics queue
-    // _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
-    // _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
+    // Use vkbootstrap to get a Graphics queue
+    _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
+    _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
     // // Initialize the memory allocator
     // VmaAllocatorCreateInfo allocatorInfo = {};
@@ -343,50 +350,36 @@ bool RenderEngine::InitSwapchain()
 
 bool RenderEngine::InitCommands()
 {
-    // // Create a command pool for commands submitted to the graphics queue.
-    // // We also want the pool to allow for resetting of individual command buffers
-    // VkCommandPoolCreateInfo commandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    // VkResult result = vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create command pool: " << result << std::endl;
-    //     return false;
-    // }
+    // Create a command pool for commands submitted to the graphics queue.
+    // We also want the pool to allow for resetting of individual command buffers
+    VkCommandPoolCreateInfo commandPoolCreateInfo = VkExtCommandPoolCreateInfo(
+        _graphicsQueueFamily,
+        VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    );
 
-    // // Allocate the default command buffer that we will use for rendering
-    // VkCommandBufferAllocateInfo cmdAllocInfo = VkExtCommandBufferAllocateInfo(_commandPool, 1);
-    // result = vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to allocate main command buffer: " << result << std::endl;
-    //     return false;
-    // }
+    for (size_t i{0}; i < FRAME_OVERLAP; ++i)
+    {
+        VkResult result = vkCreateCommandPool(_device, &commandPoolCreateInfo, nullptr, &_frames[i].commandPool);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to create command pool: " << result << std::endl;
+            return false;
+        }
 
-    // // Create pool for upload context
-    // VkCommandPoolCreateInfo uploadCommandPoolInfo = VkExtCommandPoolCreateInfo(_graphicsQueueFamily);
-    // result = vkCreateCommandPool(_device, &uploadCommandPoolInfo, nullptr, &_uploadContext._commandPool);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create upload command pool: " << result << std::endl;
-    //     return false;
-    // }
+        // Allocate the default command buffer that we will use for rendering
+		VkCommandBufferAllocateInfo cmdAllocInfo = VkExtCommandBufferAllocateInfo(
+            _frames[i].commandPool,
+            1,
+            VK_COMMAND_BUFFER_LEVEL_PRIMARY
+        );
 
-    // _mainDeletionQueue.PushDeletor
-    // (
-    //     [=]()
-    //     {
-    //         vkDestroyCommandPool(_device, _uploadContext._commandPool, nullptr);
-    //     }
-    // );
-
-    // // Allocate the default command buffer that we will use for the instant commands
-    // VkCommandBufferAllocateInfo cmdAllocInfo2 = VkExtCommandBufferAllocateInfo(_uploadContext._commandPool, 1);
-    // result = vkAllocateCommandBuffers(_device, &cmdAllocInfo2, &_uploadContext._commandBuffer);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to allocate upload command buffer: " << result << std::endl;
-    //     return false;
-    // }
+		result = vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i].mainCommandBuffer);
+        if (result != VK_SUCCESS)
+        {
+            std::cerr << "Failed to allocate command buffers: " << result << std::endl;
+            return false;
+        }
+    }
 
     return true;
 }
@@ -823,17 +816,6 @@ bool RenderEngine::InitPipelines()
     return true;
 }
 
-void RenderEngine::CleanupSwapchain()
-{
-    vkDestroySwapchainKHR(_device, _swapchain, nullptr);
-
-    // Destroy swapchain resources
-    for (size_t i = 0; i < _swapchainImageViews.size(); ++i)
-    {
-        vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
-    }
-}
-
 VkExtent2D RenderEngine::GetWindowExtent() const
 {
     int width, height;
@@ -877,6 +859,22 @@ void RenderEngine::CreateSwapchain(const VkExtent2D extent)
     _swapchain = vkbSwapchain.swapchain;
     _swapchainImages = vkbSwapchain.get_images().value();
     _swapchainImageViews = vkbSwapchain.get_image_views().value();
+}
+
+void RenderEngine::CleanupSwapchain()
+{
+    vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+
+    // Destroy swapchain resources
+    for (size_t i = 0; i < _swapchainImageViews.size(); ++i)
+    {
+        vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
+    }
+}
+
+FrameData RenderEngine::GetCurrentFrame()
+{
+    return _frames[_frameNumber % FRAME_OVERLAP];
 }
 
 void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)

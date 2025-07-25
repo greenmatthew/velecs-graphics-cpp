@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "velecs/graphics/FrameData.hpp"
+
 #include "velecs/graphics/Memory/UploadContext.hpp"
 #include "velecs/graphics/Memory/DeletionQueue.hpp"
 #include "velecs/graphics/Memory/AllocatedImage.hpp"
@@ -86,12 +88,11 @@ private:
     std::vector<VkImage> _swapchainImages;               /// @brief List of images within the swapchain.
     std::vector<VkImageView> _swapchainImageViews;       /// @brief List of image views for accessing swapchain images.
 
-    // uint32_t swapchainImageIndex{0};
-
-    // VkQueue _graphicsQueue{VK_NULL_HANDLE};             /// @brief Queue used for submitting graphics commands.
-    // uint32_t _graphicsQueueFamily{0};                   /// @brief Index of the queue family for graphics operations.
-    // VkCommandPool _commandPool{VK_NULL_HANDLE};         /// @brief Pool for allocating command buffers.
-    // VkCommandBuffer _mainCommandBuffer{VK_NULL_HANDLE}; /// @brief Main command buffer for recording rendering commands.
+    size_t _frameNumber{0};
+    static const size_t FRAME_OVERLAP = 2;
+    FrameData _frames[FRAME_OVERLAP];
+    VkQueue _graphicsQueue{VK_NULL_HANDLE}; /// @brief Queue used for submitting graphics commands.
+    uint32_t _graphicsQueueFamily{0};       /// @brief Index of the queue family for graphics operations.
 
     // VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
     // std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
@@ -150,11 +151,15 @@ private:
     bool InitDescriptors();
     bool InitPipelines();
     
-    void CleanupSwapchain();
+    
 
     VkExtent2D GetWindowExtent() const;
 
     void CreateSwapchain(const VkExtent2D extent);
+
+    void CleanupSwapchain();
+
+    FrameData GetCurrentFrame();
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);
