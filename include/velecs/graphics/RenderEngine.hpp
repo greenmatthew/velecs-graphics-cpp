@@ -95,6 +95,13 @@ private:
     VkQueue _graphicsQueue{VK_NULL_HANDLE}; /// @brief Queue used for submitting graphics commands.
     uint32_t _graphicsQueueFamily{0};       /// @brief Index of the queue family for graphics operations.
 
+    DeletionQueue _mainDeletionQueue;
+
+    VmaAllocator _allocator{nullptr};
+
+    AllocatedImage _drawImage;
+    VkExtent2D _drawExtent;
+
     // VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
     // std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
 
@@ -117,14 +124,6 @@ private:
     // VkPipeline simpleMeshPipeline{VK_NULL_HANDLE};
 
     // UploadContext _uploadContext;
-
-    DeletionQueue _mainDeletionQueue;
-
-    VmaAllocator _allocator{nullptr};
-
-    // VkImageView _depthImageView{VK_NULL_HANDLE};
-    // AllocatedImage _depthImage;
-    // VkFormat _depthFormat{VK_FORMAT_UNDEFINED};
 
     // VkDescriptorPool imguiPool{VK_NULL_HANDLE};
 
@@ -164,6 +163,16 @@ private:
         const VkImageLayout currentLayout,
         const VkImageLayout newLayout
     );
+
+    static void CopyImageToImage(
+        const VkCommandBuffer cmd,
+        const VkImage source,
+        const VkImage destination,
+        const VkExtent2D srcSize,
+        const VkExtent2D dstSize
+    );
+
+    void DrawBackground(const VkCommandBuffer cmd);
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);

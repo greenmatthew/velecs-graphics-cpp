@@ -40,6 +40,14 @@ VkSubmitInfo2 VkExtSubmitInfo2(
     const VkSemaphoreSubmitInfo* waitSemaphoreInfo
 );
 
+VkImageCreateInfo VkExtImageCreateInfo(const VkFormat format, const VkExtent3D extent, const VkImageUsageFlags usageFlags);
+
+VkImageViewCreateInfo VkExtImageviewCreateInfo(const VkFormat format, const VkImage image, const VkImageAspectFlags aspectFlags);
+
+
+
+
+
 
 VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 
@@ -54,10 +62,6 @@ VkPipelineMultisampleStateCreateInfo VkExtMultisamplingStateCreateInfo();
 VkPipelineColorBlendAttachmentState VkExtColorBlendAttachmentState();
 
 VkPipelineLayoutCreateInfo VkExtPipelineLayoutCreateInfo();
-
-VkImageCreateInfo VkExtImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
-
-VkImageViewCreateInfo VkExtImageviewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
 
 VkPipelineDepthStencilStateCreateInfo VkExtDepthStencilCreateInfo(bool bDepthTest, bool bDepthWrite, VkCompareOp compareOp);
 

@@ -26,8 +26,11 @@ public:
 
     // Public Fields
 
-    VkImage _image{VK_NULL_HANDLE};
-    VmaAllocation _allocation{VK_NULL_HANDLE};
+    VkImage image{VK_NULL_HANDLE};
+    VkImageView imageView{VK_NULL_HANDLE};
+    VmaAllocation allocation{VK_NULL_HANDLE};
+    VkExtent3D imageExtent{};
+    VkFormat imageFormat{VK_FORMAT_UNDEFINED};
 
     // Constructors and Destructors
 

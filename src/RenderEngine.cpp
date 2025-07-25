@@ -128,6 +128,9 @@ void RenderEngine::Draw()
     // We will use this command buffer exactly once, so we want to let Vulkan know that
     VkCommandBufferBeginInfo cmdBeginInfo = VkExtCommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
+    _drawExtent.width = _drawImage.imageExtent.width;
+    _drawExtent.height = _drawImage.imageExtent.height;
+
     // Start the command buffer recording
     result = vkBeginCommandBuffer(cmd, &cmdBeginInfo);
     if (result != VK_SUCCESS)
@@ -137,17 +140,9 @@ void RenderEngine::Draw()
     }
 
     // Change swapchain image's to writeable mode before rendering
-    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
-    // Make a clear-color from frame number. This will flash with a 120 frame period.
-    VkClearColorValue clearValue;
-    float flash = std::abs(std::sin(_frameNumber / 120.f));
-    clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
-
-    VkImageSubresourceRange clearRange = VkExtImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-
-    // Clear the image
-    vkCmdClearColorImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+    DrawBackground(cmd);
 
     // vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
 
@@ -220,8 +215,16 @@ void RenderEngine::Draw()
     // ImGui::Render();
     // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), _mainCommandBuffer);
 
-    // Change swapchain image's to presentable mode
-    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    // Transition the draw image and the swapchain image to their correct transfer layouts
+    TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    // Execute a copy from the draw image into the swapchain
+    CopyImageToImage(cmd, _drawImage.image, _swapchainImages[swapchainImageIndex], _drawExtent, _swapchainExtent);
+
+    // Set the swapchain image's layout to Present so we can show it on the screen
+    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
 
     // Finalize the command buffer (we can no longer add commands, but it can now be executed)
     result = vkEndCommandBuffer(cmd);
@@ -470,53 +473,64 @@ bool RenderEngine::InitSwapchain()
     // TODO: Should GetWindowExtent() or _swapchainExtent be used?
     windowExtent = _swapchainExtent;
 
-    
+    // Draw image size will match the window
+    const VkExtent3D drawImageExtent{
+        windowExtent.width,
+        windowExtent.height,
+        1
+    };
 
-    // //depth image size will match the window
-    // VkExtent3D depthImageExtent{
-    //     windowExtent.width,
-    //     windowExtent.height,
-    //     1
-    // };
+    // Hardcoding the draw format to 32 bit float
+    _drawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+    _drawImage.imageExtent = drawImageExtent;
 
-    // //hardcoding the depth format to 32 bit float
-    // _depthFormat = VK_FORMAT_D32_SFLOAT;
+    VkImageUsageFlags drawImageUsage{
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+        | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        | VK_IMAGE_USAGE_STORAGE_BIT
+        | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+    };
 
-    // //the depth image will be an image with the format we selected and Depth Attachment usage flag
-    // VkImageCreateInfo dimg_info = VkExtImageCreateInfo(_depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, depthImageExtent);
+    VkImageCreateInfo drawImageInfo = VkExtImageCreateInfo(_drawImage.imageFormat, drawImageExtent, drawImageUsage);
 
-    // //for the depth image, we want to allocate it from GPU local memory
-    // VmaAllocationCreateInfo dimg_allocinfo = {};
-    // dimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    // dimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    // For the depth image, we want to allocate it from GPU local memory
+    VmaAllocationCreateInfo drawImageAllocInfo{};
+    drawImageAllocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    drawImageAllocInfo.requiredFlags = VkMemoryPropertyFlags{VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT};
 
-    // //allocate and create the image
-    // VkResult result = vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &_depthImage._image, &_depthImage._allocation, nullptr);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create depth image: " << result << std::endl;
-    //     return false;
-    // }
+    // Allocate and create the image
+    VkResult result = vmaCreateImage(
+        _allocator,
+        &drawImageInfo,
+        &drawImageAllocInfo,
+        &_drawImage.image,
+        &_drawImage.allocation,
+        nullptr
+    );
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create draw image: " << result << std::endl;
+        return false;
+    }
 
-    // //build an image-view for the depth image to use for rendering
-    // VkImageViewCreateInfo dview_info = VkExtImageviewCreateInfo(_depthFormat, _depthImage._image, VK_IMAGE_ASPECT_DEPTH_BIT);
+    // Build an image view for the draw image to use for rendering
+    VkImageViewCreateInfo drawImageViewInfo = VkExtImageviewCreateInfo(_drawImage.imageFormat,
+        _drawImage.image,
+        VK_IMAGE_ASPECT_COLOR_BIT
+    );
 
-    // result = vkCreateImageView(_device, &dview_info, nullptr, &_depthImageView);
-    // if (result != VK_SUCCESS)
-    // {
-    //     std::cerr << "Failed to create Vulkan image view: " << result << std::endl;
-    //     return false;
-    // }
+    result = vkCreateImageView(_device, &drawImageViewInfo, nullptr, &_drawImage.imageView);
+    if (result != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create draw image view: " << result << std::endl;
+        return false;
+    }
 
-    //add to deletion queues
-    // _mainDeletionQueue.PushDeleter
-    // (
-    //     [=]()
-    //     {
-    //         vkDestroyImageView(_device, _depthImageView, nullptr);
-    //         vmaDestroyImage(_allocator, _depthImage._image, _depthImage._allocation);
-    //     }
-    // );
+    // Add to deletion queue
+    _mainDeletionQueue.PushDeleter([=](){
+        vkDestroyImageView(_device, _drawImage.imageView, nullptr);
+        vmaDestroyImage(_allocator, _drawImage.image, _drawImage.allocation);
+    });
 
     return true;
 }
@@ -938,6 +952,62 @@ void RenderEngine::TransitionImage(
     depInfo.imageMemoryBarrierCount = 1;
     depInfo.pImageMemoryBarriers = &imageBarrier;
     vkCmdPipelineBarrier2(cmd, &depInfo);
+}
+
+void RenderEngine::CopyImageToImage(
+    const VkCommandBuffer cmd,
+    const VkImage source,
+    const VkImage destination,
+    const VkExtent2D srcSize,
+    const VkExtent2D dstSize
+)
+{
+    VkImageBlit2 blitRegion{};
+    blitRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+    blitRegion.pNext = nullptr;
+    blitRegion.srcOffsets[1].x = srcSize.width;
+    blitRegion.srcOffsets[1].y = srcSize.height;
+    blitRegion.srcOffsets[1].z = 1;
+
+    blitRegion.dstOffsets[1].x = dstSize.width;
+    blitRegion.dstOffsets[1].y = dstSize.height;
+    blitRegion.dstOffsets[1].z = 1;
+
+    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.srcSubresource.baseArrayLayer = 0;
+    blitRegion.srcSubresource.layerCount = 1;
+    blitRegion.srcSubresource.mipLevel = 0;
+
+    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.dstSubresource.baseArrayLayer = 0;
+    blitRegion.dstSubresource.layerCount = 1;
+    blitRegion.dstSubresource.mipLevel = 0;
+
+    VkBlitImageInfo2 blitInfo{};
+    blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+    blitInfo.pNext = nullptr;
+    blitInfo.dstImage = destination;
+    blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    blitInfo.srcImage = source;
+    blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    blitInfo.filter = VK_FILTER_LINEAR;
+    blitInfo.regionCount = 1;
+    blitInfo.pRegions = &blitRegion;
+
+    vkCmdBlitImage2(cmd, &blitInfo);
+}
+
+void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
+{
+    // Make a clear-color from frame number. This will flash with a 120 frame period.
+    VkClearColorValue clearValue;
+    float flash = std::abs(std::sin(_frameNumber / 120.f));
+    clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+
+    VkImageSubresourceRange clearRange = VkExtImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    // Clear the image
+    vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 }
 
 void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
