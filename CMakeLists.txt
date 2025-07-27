@@ -1,3 +1,13 @@
+# @file    CMakeLists.txt
+# @author  Matthew Green
+# @date    2023-11-30 13:49:39
+# 
+# @section LICENSE
+# 
+# Copyright (c) 2023 Matthew Green - All rights reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 cmake_minimum_required(VERSION 3.14)
 project(velecs-graphics VERSION 0.1.0)
 
@@ -76,12 +86,6 @@ add_subdirectory(libs/assimp)
 # Restore BUILD_SHARED_LIBS to not affect other libraries
 set(BUILD_SHARED_LIBS OFF)
 
-# Future external dependencies can be added here:
-# add_subdirectory(libs/imgui)         # For UI later
-# add_subdirectory(libs/imgui_guizo)   # For UI later
-# add_subdirectory(libs/stb)           # Simple mesh loader
-# add_subdirectory(libs/assimp)        # Better mesh loader
-
 # Add other velecs dependencies
 get_property(VELECS_DEPS_LOADED GLOBAL PROPERTY VELECS_DEPS_LOADED)
 if(NOT VELECS_DEPS_LOADED)
@@ -100,6 +104,30 @@ if(NOT TARGET velecs-ecs)
     add_subdirectory(../velecs-ecs ${CMAKE_BINARY_DIR}/velecs-ecs)
 endif()
 
+# ImGui sources - compile directly into our library
+set(IMGUI_SOURCES
+    libs/imgui/imgui.cpp
+    libs/imgui/imgui_demo.cpp
+    libs/imgui/imgui_draw.cpp
+    libs/imgui/imgui_tables.cpp
+    libs/imgui/imgui_widgets.cpp
+    # Add backend sources for SDL3 and Vulkan
+    libs/imgui/backends/imgui_impl_sdl3.cpp
+    libs/imgui/backends/imgui_impl_vulkan.cpp
+)
+
+set(IMGUI_HEADERS
+    libs/imgui/imgui.h
+    libs/imgui/imgui_internal.h
+    libs/imgui/imconfig.h
+    libs/imgui/imstb_rectpack.h
+    libs/imgui/imstb_textedit.h
+    libs/imgui/imstb_truetype.h
+    # Backend headers
+    libs/imgui/backends/imgui_impl_sdl3.h
+    libs/imgui/backends/imgui_impl_vulkan.h
+)
+
 # Source files for the library
 set(LIB_SOURCES
     src/RenderEngine.cpp
@@ -109,7 +137,6 @@ set(LIB_SOURCES
     src/Memory/DeletionQueue.cpp
     src/Memory/DescriptorAllocator.cpp
 
-
     # Render Pipeline
     src/VulkanInitializers.cpp
     src/RenderPipelineLayoutBuilder.cpp
@@ -118,16 +145,13 @@ set(LIB_SOURCES
     src/VertexBufferParamsBuilder.cpp
     src/DescriptorLayoutBuilder.cpp
 
-
     # Meshes
     src/Mesh.cpp
-
 
     # Cameras
     src/Components/Camera.cpp
     src/Components/PerspectiveCamera.cpp
     src/Components/OrthographicCamera.cpp
-
 
     # Shaders
     src/Shader/ShaderPrograms/ShaderProgramBase.cpp
@@ -144,8 +168,10 @@ set(LIB_SOURCES
     src/Shader/Reflection/ShaderReflectionData.cpp
     src/Shader/Reflection/ShaderReflector.cpp
     
-
     src/Color32.cpp
+
+    # Include ImGui sources directly
+    ${IMGUI_SOURCES}
 )
 
 # Header files for the library (for IDE organization)  
@@ -154,14 +180,12 @@ set(LIB_HEADERS
 
     include/velecs/graphics/RenderEngine.hpp
 
-
     # Vulkan Memory Management
     include/velecs/graphics/Memory/AllocatedBuffer.hpp
     include/velecs/graphics/Memory/AllocatedImage.hpp
     include/velecs/graphics/Memory/DeletionQueue.hpp
     include/velecs/graphics/Memory/UploadContext.hpp
     include/velecs/graphics/Memory/DescriptorAllocator.hpp
-
 
     # Render Pipeline
     include/velecs/graphics/VulkanInitializers.hpp
@@ -173,7 +197,6 @@ set(LIB_HEADERS
     include/velecs/graphics/VertexBufferParamsBuilder.hpp
     include/velecs/graphics/DescriptorLayoutBuilder.hpp
 
-
     # Meshes
     include/velecs/graphics/Vertex.hpp
     include/velecs/graphics/MeshBase.hpp
@@ -181,12 +204,10 @@ set(LIB_HEADERS
     include/velecs/graphics/Components/MeshRenderer.hpp
     include/velecs/graphics/ObjectUniforms.hpp
 
-
     # Cameras
     include/velecs/graphics/Components/Camera.hpp
     include/velecs/graphics/Components/PerspectiveCamera.hpp
     include/velecs/graphics/Components/OrthographicCamera.hpp
-
 
     # Shaders
     include/velecs/graphics/Shader.hpp
@@ -207,6 +228,9 @@ set(LIB_HEADERS
 
     include/velecs/graphics/Rect.hpp
     include/velecs/graphics/Color32.hpp
+
+    # Include ImGui headers for IDE organization
+    ${IMGUI_HEADERS}
 )
 
 # Always build the library
@@ -216,6 +240,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIB_SOURCES} ${LIB_HEADERS
 target_include_directories(velecs-graphics
 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    # Add ImGui include paths
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui/backends>
 )
 
 target_link_libraries(velecs-graphics
@@ -232,5 +259,5 @@ target_link_libraries(velecs-graphics
 )
 
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-set(VELECS_GRAPHICS_LIBRARIES velecs-graphics PARENT_SCOPE)
+    set(VELECS_GRAPHICS_LIBRARIES velecs-graphics PARENT_SCOPE)
 endif()

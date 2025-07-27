@@ -75,6 +75,7 @@ private:
 
     SDL_Window* _window{nullptr}; /// @brief Pointer to the SDL window structure.
 
+    uint32_t _vulkanApiVersion{0};
     VkInstance _instance{VK_NULL_HANDLE};                     /// @brief Handle to the Vulkan library.
     VkDebugUtilsMessengerEXT _debugMessenger{VK_NULL_HANDLE}; /// @brief Handle for Vulkan debug messaging.
     VkPhysicalDevice _chosenGPU{VK_NULL_HANDLE};              /// @brief The chosen GPU for rendering operations.
@@ -118,6 +119,7 @@ private:
     bool InitSyncStructures();
     bool InitDescriptors();
     bool InitPipelines();
+    bool InitImgui();
     
     VkExtent2D GetWindowExtent() const;
 
@@ -145,6 +147,7 @@ private:
     );
 
     void DrawBackground(const VkCommandBuffer cmd);
+    void DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView);
 
     // These functions should be better handled
     void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function);

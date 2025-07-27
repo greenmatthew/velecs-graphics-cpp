@@ -52,6 +52,27 @@ VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(
     const std::string& entryPoint = "main"
 );
 
+VkRenderingAttachmentInfo VkExtRenderingAttachmentInfo(
+    const VkImageView view,
+    const VkClearValue* const clear,
+    const VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+);
+
+VkRenderingInfo VkExtRenderingInfo(
+    const VkExtent2D renderExtent,
+    const VkRenderingAttachmentInfo* const colorAttachment,
+    const VkRenderingAttachmentInfo* const depthAttachment
+);
+
+
+
+
+
+
+
+
+
+
 
 
 

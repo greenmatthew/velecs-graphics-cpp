@@ -35,6 +35,10 @@ using namespace velecs::ecs;
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_vulkan.h"
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -67,6 +71,7 @@ SDL_AppResult RenderEngine::Init()
     if (!InitSyncStructures()) return SDL_APP_FAILURE;
     if (!InitDescriptors()   ) return SDL_APP_FAILURE;
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
+    if (!InitImgui()         ) return SDL_APP_FAILURE;
 
     _wasInitialized = true;
 
@@ -76,9 +81,15 @@ SDL_AppResult RenderEngine::Init()
 void RenderEngine::Draw()
 {
     // Start the Dear ImGui frame
-    // ImGui_ImplVulkan_NewFrame();
-    // ImGui_ImplSDL2_NewFrame();
-    // ImGui::NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    // Some imgui UI to test
+    ImGui::ShowDemoWindow();
+
+    // Make imgui calculate internal draw structures
+    ImGui::Render();
 
     // Wait until the GPU has finished rendering the last frame. Timeout of 1 second
     VkResult result = vkWaitForFences(_device, 1, &(GetCurrentFrame().renderFence), true, 1000000000);
@@ -223,9 +234,19 @@ void RenderEngine::Draw()
     // Execute a copy from the draw image into the swapchain
     CopyImageToImage(cmd, _drawImage.image, _swapchainImages[swapchainImageIndex], _drawExtent, _swapchainExtent);
 
-    // Set the swapchain image's layout to Present so we can show it on the screen
-    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    // Set swapchain image layout to Attachment Optimal so we can draw it
+    TransitionImage(
+        cmd,
+        _swapchainImages[swapchainImageIndex],
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
 
+    // Draw imgui into the swapchain image
+	DrawImgui(cmd,  _swapchainImageViews[swapchainImageIndex]);
+
+    // Set swapchain image layout to Present so we can draw it
+	TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // Finalize the command buffer (we can no longer add commands, but it can now be executed)
     result = vkEndCommandBuffer(cmd);
@@ -335,14 +356,18 @@ void RenderEngine::Cleanup()
 
 bool RenderEngine::InitVulkan()
 {
-    vkb::InstanceBuilder builder;
-
     const char* windowTitle = SDL_GetWindowTitle(_window);
 
-    auto builderResult = builder.set_app_name(windowTitle)
+    vkb::InstanceBuilder builder;
+
+    auto builderResult = builder
+        .set_app_name(windowTitle)
+        .set_app_version(VK_MAKE_VERSION(1, 0, 0))
+        .set_engine_name("Velecs Engine")
+        .set_engine_version(VK_MAKE_VERSION(1, 0, 0))
+        .require_api_version(VULKAN_MAJOR_VERSION, VULKAN_MINOR_VERSION, VULKAN_PATCH_VERSION)
         .request_validation_layers(ENABLE_VALIDATION_LAYERS)
         .use_default_debug_messenger()
-        .require_api_version(VULKAN_MAJOR_VERSION, VULKAN_MINOR_VERSION, VULKAN_PATCH_VERSION)
         .build()
         ;
 
@@ -382,6 +407,7 @@ bool RenderEngine::InitVulkan()
     _instance = vkbInstance.instance;
     // Store the debug messenger
     _debugMessenger = vkbInstance.debug_messenger;
+    _vulkanApiVersion = vkbInstance.api_version;
 
     if (_debugMessenger == nullptr)
     {
@@ -878,6 +904,69 @@ bool RenderEngine::InitPipelines()
     return true;
 }
 
+bool RenderEngine::InitImgui()
+{
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
+
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplSDL3_InitForVulkan(_window);
+
+    VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo{};
+    pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    pipelineRenderingCreateInfo.pNext = nullptr;
+    pipelineRenderingCreateInfo.viewMask = 0;
+    pipelineRenderingCreateInfo.colorAttachmentCount = 1; // One color attachment (swapchain)
+    pipelineRenderingCreateInfo.pColorAttachmentFormats = &_swapchainImageFormat; // Point to your swapchain format
+    pipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED; // No depth buffer for ImGui
+    pipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED; // No stencil for ImGui
+
+    ImGui_ImplVulkan_InitInfo init_info{};
+    init_info.ApiVersion = _vulkanApiVersion;
+    init_info.Instance = _instance;
+    init_info.PhysicalDevice = _chosenGPU;
+    init_info.Device = _device;
+    init_info.QueueFamily = _graphicsQueueFamily;
+    init_info.Queue = _graphicsQueue;
+    // Optional
+    init_info.PipelineCache = nullptr;
+    // Using `DescriptorPoolSize` instead which lets imgui make its own descriptor pool
+    init_info.DescriptorPool = nullptr;
+    // This needs to be increased if we do ImGui_ImplVulkan_AddTexture()
+    init_info.DescriptorPoolSize = IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = 3;
+    init_info.ImageCount = 3;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.Allocator = nullptr; // Optional
+    init_info.UseDynamicRendering = true;
+    init_info.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
+    init_info.CheckVkResultFn = [](VkResult result){
+        if (result != VK_SUCCESS)
+        {
+            std::ostringstream oss{};
+            oss << "[imgui] Vulkan error: " << result;
+            throw std::runtime_error(oss.str());
+        }
+    };
+    ImGui_ImplVulkan_Init(&init_info);
+
+    // add the destroy the imgui created structures
+	_mainDeletionQueue.PushDeleter([=]() {
+		ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+	});
+
+    return true;
+}
+
 VkExtent2D RenderEngine::GetWindowExtent() const
 {
     int width, height;
@@ -892,7 +981,7 @@ void RenderEngine::CreateSwapchain(const VkExtent2D extent)
 {
     vkb::SwapchainBuilder swapchainBuilder{ _chosenGPU, _device, _surface };
 
-    _swapchainImageFormat = VK_FORMAT_B8G8R8A8_SNORM;
+    _swapchainImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
 
     VkSurfaceFormatKHR surfaceFormat{};
     surfaceFormat.format = _swapchainImageFormat;
@@ -1075,6 +1164,22 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     uint32_t groupCountY = static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f));
     uint32_t groupCountZ = 1U;
 	vkCmdDispatch(cmd, groupCountX, groupCountY, groupCountZ);
+}
+
+void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)
+{
+    VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
+        targetImageView,
+        nullptr,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+	VkRenderingInfo renderInfo = VkExtRenderingInfo(_swapchainExtent, &colorAttachment, nullptr);
+
+	vkCmdBeginRendering(cmd, &renderInfo);
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+	vkCmdEndRendering(cmd);
 }
 
 void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
