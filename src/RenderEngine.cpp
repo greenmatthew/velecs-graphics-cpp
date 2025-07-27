@@ -956,11 +956,20 @@ bool RenderEngine::InitBackgroundPipeline()
         throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
     }
 
-    ComputePipelineBuilder builder;
-    builder.SetDevice(_device)
+    _gradientPipeline = ComputePipelineBuilder{}
+        .SetDevice(_device)
         .SetPipelineLayout(_gradientPipelineLayout)
         .SetComputeShader(_gradientProgram.comp)
+        .GetPipeline()
         ;
+    
+    // Not necessary: `~Shader` already cleans up once it goes out of scope....
+    // vkDestroyShaderModule(_device, _gradientProgram.comp->GetShaderModule(), nullptr);
+    
+    _mainDeletionQueue.PushDeleter([&](){
+        vkDestroyPipelineLayout(_device, _gradientPipelineLayout, nullptr);
+        vkDestroyPipeline(_device, _gradientPipeline, nullptr);
+    });
 
     return true;
 }
@@ -1045,15 +1054,27 @@ void RenderEngine::CopyImageToImage(
 
 void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
 {
-    // Make a clear-color from frame number. This will flash with a 120 frame period.
-    VkClearColorValue clearValue;
-    float flash = std::abs(std::sin(_frameNumber / 120.f));
-    clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
+    // // Make a clear-color from frame number. This will flash with a 120 frame period.
+    // VkClearColorValue clearValue;
+    // float flash = std::abs(std::sin(_frameNumber / 120.f));
+    // clearValue = { { 0.0f, 0.0f, flash, 1.0f } };
 
-    VkImageSubresourceRange clearRange = VkExtImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    // VkImageSubresourceRange clearRange = VkExtImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    // Clear the image
-    vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+    // // Clear the image
+    // vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
+
+    // Bind the gradient drawing compute pipeline
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipeline);
+
+	// Bind the descriptor set containing the draw image for the compute pipeline
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipelineLayout, 0, 1, &_drawImageDescriptors, 0, nullptr);
+
+	// Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
+    uint32_t groupCountX = static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f));
+    uint32_t groupCountY = static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f));
+    uint32_t groupCountZ = 1U;
+	vkCmdDispatch(cmd, groupCountX, groupCountY, groupCountZ);
 }
 
 void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)

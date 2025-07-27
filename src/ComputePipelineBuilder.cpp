@@ -45,7 +45,7 @@ ComputePipelineBuilder& ComputePipelineBuilder::SetComputeShader(const std::shar
 
 void ComputePipelineBuilder::ValidateState()
 {
-    if (_compShader != nullptr)
+    if (_compShader == nullptr || !_compShader->IsValid())
         throw std::runtime_error("No compute shader set");
 }
 
