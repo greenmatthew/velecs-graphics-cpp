@@ -1,4 +1,4 @@
-/// @file    RenderPipelineLayout.hpp
+/// @file    RenderPipelineLayoutBuilder.hpp
 /// @author  Matthew Green
 /// @date    2025-07-18 15:45:47
 /// 
@@ -18,11 +18,11 @@
 
 namespace velecs::graphics {
 
-/// @class RenderPipelineLayout
+/// @class RenderPipelineLayoutBuilder
 /// @brief Brief description.
 ///
 /// Rest of description.
-class RenderPipelineLayout {
+class RenderPipelineLayoutBuilder {
 public:
     // Enums
 
@@ -31,18 +31,18 @@ public:
     // Constructors and Destructors
 
     /// @brief Default constructor.
-    RenderPipelineLayout() = default;
+    RenderPipelineLayoutBuilder() = default;
 
     /// @brief Default deconstructor.
-    ~RenderPipelineLayout() = default;
+    ~RenderPipelineLayoutBuilder() = default;
 
     // Delete copy operations to prevent accidental copying of Vulkan handles
-    RenderPipelineLayout(const RenderPipelineLayout&) = delete;
-    RenderPipelineLayout& operator=(const RenderPipelineLayout&) = delete;
+    RenderPipelineLayoutBuilder(const RenderPipelineLayoutBuilder&) = delete;
+    RenderPipelineLayoutBuilder& operator=(const RenderPipelineLayoutBuilder&) = delete;
 
     // Allow move operations
-    RenderPipelineLayout(RenderPipelineLayout&& other) noexcept;
-    RenderPipelineLayout& operator=(RenderPipelineLayout&& other) noexcept;
+    RenderPipelineLayoutBuilder(RenderPipelineLayoutBuilder&& other) noexcept;
+    RenderPipelineLayoutBuilder& operator=(RenderPipelineLayoutBuilder&& other) noexcept;
 
     // Public Methods
 
@@ -72,7 +72,7 @@ public:
     /// @return Number of descriptor set layouts in this pipeline layout
     inline size_t GetDescriptorSetLayoutCount() const { return _descriptorSetLayouts.size(); }
 
-    inline RenderPipelineLayout& SetDevice(VkDevice device) { _device = device; return *this; }
+    inline RenderPipelineLayoutBuilder& SetDevice(VkDevice device) { _device = device; return *this; }
 
     /// @brief Sets up a push constant for the specified type and shader stages
     /// @tparam T The type of the push constant struct (must be standard layout)
@@ -81,7 +81,7 @@ public:
     /// @return Reference to this layout for method chaining
     /// @throws std::runtime_error if layout is already built or if type requirements aren't met
     template<typename T>
-    RenderPipelineLayout& SetPushConstant(VkShaderStageFlags stageFlags, uint32_t offset = 0)
+    RenderPipelineLayoutBuilder& SetPushConstant(VkShaderStageFlags stageFlags, uint32_t offset = 0)
     {
         static_assert(std::is_standard_layout_v<T>, "Push constant type must have standard layout");
         static_assert(std::is_trivially_copyable_v<T>, "Push constant type must be trivially copyable");
@@ -102,13 +102,13 @@ public:
     /// @param setLayout The descriptor set layout to add
     /// @return Reference to this layout for method chaining
     /// @throws std::runtime_error if layout is already built
-    RenderPipelineLayout& AddDescriptorSetLayout(VkDescriptorSetLayout setLayout);
+    RenderPipelineLayoutBuilder& AddDescriptorSetLayout(VkDescriptorSetLayout setLayout);
 
     /// @brief Adds multiple descriptor set layouts to the pipeline layout
     /// @param setLayouts Vector of descriptor set layouts to add
     /// @return Reference to this layout for method chaining
     /// @throws std::runtime_error if layout is already built
-    RenderPipelineLayout& AddDescriptorSetLayouts(const std::vector<VkDescriptorSetLayout>& setLayouts);
+    RenderPipelineLayoutBuilder& AddDescriptorSetLayouts(const std::vector<VkDescriptorSetLayout>& setLayouts);
 
     VkPipelineLayout GetLayout();
 

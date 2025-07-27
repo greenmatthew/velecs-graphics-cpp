@@ -1,4 +1,4 @@
-/// @file    RenderPipelineLayout.cpp
+/// @file    RenderPipelineLayoutBuilder.cpp
 /// @author  Matthew Green
 /// @date    2025-07-20 11:17:11
 /// 
@@ -8,7 +8,7 @@
 /// Unauthorized copying of this file, via any medium is strictly prohibited
 /// Proprietary and confidential
 
-#include "velecs/graphics/RenderPipelineLayout.hpp"
+#include "velecs/graphics/RenderPipelineLayoutBuilder.hpp"
 
 #include <stdexcept>
 #include <string>
@@ -21,19 +21,19 @@ namespace velecs::graphics {
 
 // Public Methods
 
-RenderPipelineLayout& RenderPipelineLayout::AddDescriptorSetLayout(VkDescriptorSetLayout setLayout)
+RenderPipelineLayoutBuilder& RenderPipelineLayoutBuilder::AddDescriptorSetLayout(VkDescriptorSetLayout setLayout)
 {
     _descriptorSetLayouts.push_back(setLayout);
     return *this;
 }
 
-RenderPipelineLayout& RenderPipelineLayout::AddDescriptorSetLayouts(const std::vector<VkDescriptorSetLayout>& setLayouts)
+RenderPipelineLayoutBuilder& RenderPipelineLayoutBuilder::AddDescriptorSetLayouts(const std::vector<VkDescriptorSetLayout>& setLayouts)
 {
     _descriptorSetLayouts.insert(_descriptorSetLayouts.end(), setLayouts.begin(), setLayouts.end());
     return *this;
 }
 
-VkPipelineLayout RenderPipelineLayout::GetLayout()
+VkPipelineLayout RenderPipelineLayoutBuilder::GetLayout()
 {
     if (_device == VK_NULL_HANDLE) throw std::runtime_error("Invalid device handle");
 
@@ -52,7 +52,8 @@ VkPipelineLayout RenderPipelineLayout::GetLayout()
 
     VkPipelineLayout layout{VK_NULL_HANDLE};
     VkResult result = vkCreatePipelineLayout(_device, &layoutInfo, nullptr, &layout);
-    if (result != VK_SUCCESS) {
+    if (result != VK_SUCCESS)
+    {
         throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
     }
 

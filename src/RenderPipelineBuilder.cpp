@@ -1,4 +1,4 @@
-/// @file    RenderPipeline.cpp
+/// @file    RenderPipelineBuilder.cpp
 /// @author  Matthew Green
 /// @date    2025-07-18 15:43:18
 /// 
@@ -8,7 +8,7 @@
 /// Unauthorized copying of this file, via any medium is strictly prohibited
 /// Proprietary and confidential
 
-#include "velecs/graphics/RenderPipeline.hpp"
+#include "velecs/graphics/RenderPipelineBuilder.hpp"
 
 namespace velecs::graphics {
 
@@ -18,19 +18,48 @@ namespace velecs::graphics {
 
 // Public Methods
 
-RenderPipeline& RenderPipeline::SetDevice(const VkDevice device)
+RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<VertexShader>& shader)
 {
-    _device = device;
+    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
+    _shaders.push_back(shader);
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetRenderPass(const VkRenderPass renderPass)
+RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<GeometryShader>& shader)
+{
+    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
+    _shaders.push_back(shader);
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<FragmentShader>& shader)
+{
+    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
+    _shaders.push_back(shader);
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<TessellationControlShader>& shader)
+{
+    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
+    _shaders.push_back(shader);
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<TessellationEvaluationShader>& shader)
+{
+    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
+    _shaders.push_back(shader);
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::SetRenderPass(const VkRenderPass renderPass)
 {
     _renderPass = renderPass;
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetViewport(VkExtent2D extent)
+RenderPipelineBuilder& RenderPipelineBuilder::SetViewport(VkExtent2D extent)
 {
     _viewport.x = 0.0f;
     _viewport.y = 0.0f;
@@ -44,7 +73,7 @@ RenderPipeline& RenderPipeline::SetViewport(VkExtent2D extent)
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetViewport(
+RenderPipelineBuilder& RenderPipelineBuilder::SetViewport(
     float x,
     float y,
     float width,
@@ -69,7 +98,7 @@ RenderPipeline& RenderPipeline::SetViewport(
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+RenderPipelineBuilder& RenderPipelineBuilder::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
     _scissor.offset.x = x;
     _scissor.offset.y = y;
@@ -78,46 +107,25 @@ RenderPipeline& RenderPipeline::SetScissor(int32_t x, int32_t y, uint32_t width,
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetPipelineLayout(const VkPipelineLayout pipelineLayout)
-{
-    _pipelineLayout = pipelineLayout;
-    return *this;
-}
-
-RenderPipeline& RenderPipeline::SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput)
+RenderPipelineBuilder& RenderPipelineBuilder::SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput)
 {
     _vertexInputInfo = vertexInput;
     return *this;
 }
 
-RenderPipeline& RenderPipeline::AddShader(const Shader& shader)
-{
-    _shaderStages.push_back(shader.GetCreateInfo());
-    return *this;
-}
-
-RenderPipeline& RenderPipeline::AddShaders(const std::vector<std::reference_wrapper<const Shader>>& shaders)
-{
-    for (const auto& shader : shaders)
-    {
-        _shaderStages.push_back(shader.get().GetCreateInfo());
-    }
-    return *this;
-}
-
-RenderPipeline& RenderPipeline::SetTopology(VkPrimitiveTopology topology)
+RenderPipelineBuilder& RenderPipelineBuilder::SetTopology(VkPrimitiveTopology topology)
 {
     _inputAssembly.topology = topology;
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetPolygonMode(VkPolygonMode mode)
+RenderPipelineBuilder& RenderPipelineBuilder::SetPolygonMode(VkPolygonMode mode)
 {
     _rasterizer.polygonMode = mode;
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetCullMode(
+RenderPipelineBuilder& RenderPipelineBuilder::SetCullMode(
     VkCullModeFlags cullMode,
     VkFrontFace frontFace/* = VK_FRONT_FACE_COUNTER_CLOCKWISE*/
 )
@@ -127,7 +135,7 @@ RenderPipeline& RenderPipeline::SetCullMode(
     return *this;
 }
 
-RenderPipeline& RenderPipeline::SetDepthTest(
+RenderPipelineBuilder& RenderPipelineBuilder::SetDepthTest(
     bool enable,
     bool write/* = true*/,
     VkCompareOp compareOp/* = VK_COMPARE_OP_LESS*/
@@ -139,7 +147,7 @@ RenderPipeline& RenderPipeline::SetDepthTest(
     return *this;
 }
 
-RenderPipeline& RenderPipeline::EnableAlphaBlending()
+RenderPipelineBuilder& RenderPipelineBuilder::EnableAlphaBlending()
 {
     _colorBlendAttachment.blendEnable = VK_TRUE;
     _colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -151,78 +159,26 @@ RenderPipeline& RenderPipeline::EnableAlphaBlending()
     return *this;
 }
 
-RenderPipeline& RenderPipeline::DisableBlending()
+RenderPipelineBuilder& RenderPipelineBuilder::DisableBlending()
 {
     _colorBlendAttachment.blendEnable = VK_FALSE;
     return *this;
-}
-
-/// @brief Creates the actual Vulkan pipeline
-VkPipeline RenderPipeline::GetPipeline()
-{
-    ValidateState();
-
-    // Viewport state
-    VkPipelineViewportStateCreateInfo viewportState{};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.viewportCount = 1;
-    viewportState.scissorCount = 1;
-
-    // Dynamic state for viewport and scissor (common practice)
-    VkDynamicState dynamicStates[] = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamicState{};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = 2;
-    dynamicState.pDynamicStates = dynamicStates;
-
-    // Color blending state
-    VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &_colorBlendAttachment;
-
-    // Pipeline create info
-    VkGraphicsPipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages.size());
-    pipelineInfo.pStages = _shaderStages.data();
-    pipelineInfo.pVertexInputState = &_vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &_inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.pRasterizationState = &_rasterizer;
-    pipelineInfo.pMultisampleState = &_multisampling;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDepthStencilState = &_depthStencil;
-    pipelineInfo.layout = _pipelineLayout;
-    pipelineInfo.renderPass = _renderPass;
-    pipelineInfo.subpass = 0;
-
-    VkPipeline pipeline;
-    VkResult result = vkCreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create graphics pipeline: " + std::to_string(result));
-    }
-
-    return pipeline;
 }
 
 // Protected Fields
 
 // Protected Methods
 
-// Private Fields
+void RenderPipelineBuilder::ValidateState()
+{
+    if (_shaders.empty()) 
+        throw std::runtime_error("No shaders added");
 
-// Private Methods
+    if (_renderPass == VK_NULL_HANDLE) throw std::runtime_error("Render pass not set");
+    if (_viewport.width == 0 || _viewport.height == 0) throw std::runtime_error("Viewport not set - call SetViewport()");
+}
 
-void RenderPipeline::SetDefaultValues()
+VkPipeline RenderPipelineBuilder::CreatePipeline()
 {
     // Vertex input - empty by default (must be set by user)
     _vertexInputInfo = VkExtVertexInputStateCreateInfo();
@@ -259,15 +215,72 @@ void RenderPipeline::SetDefaultValues()
     // These MUST be set by the user since we don't know window size
     _viewport = {};
     _scissor = {};
+
+    // Viewport state
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.scissorCount = 1;
+
+    // Dynamic state for viewport and scissor (common practice)
+    VkDynamicState dynamicStates[] = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = 2;
+    dynamicState.pDynamicStates = dynamicStates;
+
+    // Color blending state
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &_colorBlendAttachment;
+
+    // Pipeline create info
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    auto shaderStages = GetShaderStageCreateInfos();
+    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.pVertexInputState = &_vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &_inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.pRasterizationState = &_rasterizer;
+    pipelineInfo.pMultisampleState = &_multisampling;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDepthStencilState = &_depthStencil;
+    pipelineInfo.layout = _pipelineLayout;
+    pipelineInfo.renderPass = _renderPass;
+    pipelineInfo.subpass = 0;
+
+    VkPipeline pipeline;
+    VkResult result = vkCreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create graphics pipeline: " + std::to_string(result));
+    }
+
+    return pipeline;
 }
 
-void RenderPipeline::ValidateState()
+std::vector<VkPipelineShaderStageCreateInfo> RenderPipelineBuilder::GetShaderStageCreateInfos()
 {
-    if (_device == VK_NULL_HANDLE) throw std::runtime_error("Device not set");
-    if (_renderPass == VK_NULL_HANDLE) throw std::runtime_error("Render pass not set");
-    if (_pipelineLayout == VK_NULL_HANDLE) throw std::runtime_error("Pipeline layout not set");
-    if (_shaderStages.empty()) throw std::runtime_error("No shader stages added");
-    if (_viewport.width == 0 || _viewport.height == 0) throw std::runtime_error("Viewport not set - call SetViewport()");
+    std::vector<VkPipelineShaderStageCreateInfo> result;
+    for (auto shader : _shaders)
+    {
+        result.push_back(shader->GetCreateInfo());
+    }
+    return result;
 }
+
+// Private Fields
+
+// Private Methods
 
 } // namespace velecs::graphics

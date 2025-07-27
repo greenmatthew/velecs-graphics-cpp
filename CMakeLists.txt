@@ -112,9 +112,9 @@ set(LIB_SOURCES
 
     # Render Pipeline
     src/VulkanInitializers.cpp
+    src/RenderPipelineLayoutBuilder.cpp
+    src/ComputePipelineBuilder.cpp
     src/PipelineBuilder.cpp
-    src/RenderPipelineLayout.cpp
-    src/RenderPipeline.cpp
     src/VertexBufferParamsBuilder.cpp
     src/DescriptorLayoutBuilder.cpp
 
@@ -165,8 +165,10 @@ set(LIB_HEADERS
 
     # Render Pipeline
     include/velecs/graphics/VulkanInitializers.hpp
-    include/velecs/graphics/RenderPipelineLayout.hpp
-    include/velecs/graphics/RenderPipeline.hpp
+    include/velecs/graphics/PipelineBuilderBase.hpp
+    include/velecs/graphics/RenderPipelineBuilder.hpp
+    include/velecs/graphics/RenderPipelineLayoutBuilder.hpp
+    include/velecs/graphics/ComputePipelineBuilder.hpp
     include/velecs/graphics/PipelineBuilder.hpp
     include/velecs/graphics/VertexBufferParamsBuilder.hpp
     include/velecs/graphics/DescriptorLayoutBuilder.hpp

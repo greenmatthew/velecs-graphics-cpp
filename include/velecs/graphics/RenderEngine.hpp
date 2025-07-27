@@ -107,39 +107,8 @@ private:
     VkDescriptorSetLayout _drawImageDescriptorLayout{VK_NULL_HANDLE};
     VkDescriptorSet _drawImageDescriptors{nullptr};
 
-    // VkRenderPass _renderPass{VK_NULL_HANDLE}; /// @brief Handle to the Vulkan render pass.
-    // std::vector<VkFramebuffer> _framebuffers; /// @brief List of framebuffers for rendering.
-
-    // VkSemaphore _presentSemaphore{VK_NULL_HANDLE}, _renderSemaphore{VK_NULL_HANDLE}; /// @brief Semaphore for synchronizing image presentation.
-    // VkFence _renderFence{VK_NULL_HANDLE}; /// @brief Fence for synchronizing rendering operations.
-
-    // VkPipeline currentPipeline{VK_NULL_HANDLE};
-
-    // std::vector<VkPipeline> pipelines;
-    // std::vector<VkPipelineLayout> pipelineLayouts;
-
-    // VkPipelineLayout _trianglePipelineLayout{VK_NULL_HANDLE}; /// @brief Handle to the pipeline layout.
-    // VkPipeline _triangleWireFramePipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
-    // VkPipeline _rainbowSimpleMeshPipeline{VK_NULL_HANDLE};    /// @brief Handle to the pipeline.
-
-    // VkPipelineLayout _meshPipelineLayout{VK_NULL_HANDLE};
-    // VkPipeline _meshPipeline{VK_NULL_HANDLE};
-
-    // VkPipelineLayout simpleMeshPipelineLayout{VK_NULL_HANDLE};
-    // VkPipeline simpleMeshPipeline{VK_NULL_HANDLE};
-
-    // UploadContext _uploadContext;
-
-    // VkDescriptorPool imguiPool{VK_NULL_HANDLE};
-
-
-    // These fields should be better handled
-
-    // VkDescriptorSetLayout _cameraDescriptorSetLayout{VK_NULL_HANDLE};
-    // VkDescriptorSet _cameraDescriptorSet{nullptr};
-    
-    // VkPipelineLayout _opaquePipelineLayout{VK_NULL_HANDLE};
-    // VkPipeline _opaquePipeline{VK_NULL_HANDLE};
+    VkPipelineLayout _gradientPipelineLayout{nullptr};
+    VkPipeline _gradientPipeline{nullptr};
 
     // Private Methods
 
@@ -155,6 +124,8 @@ private:
     void CreateSwapchain(const VkExtent2D extent);
 
     void CleanupSwapchain();
+
+    bool InitBackgroundPipeline();
 
     FrameData& GetCurrentFrame();
 

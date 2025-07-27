@@ -11,14 +11,15 @@
 #include "velecs/graphics/RenderEngine.hpp"
 
 #include "velecs/graphics/VulkanInitializers.hpp"
-#include "velecs/graphics/DescriptorLayoutBuilder.hpp"
-#include "velecs/graphics/RenderPipelineLayout.hpp"
-#include "velecs/graphics/RenderPipeline.hpp"
-#include "velecs/graphics/PipelineBuilder.hpp"
 #include "velecs/graphics/Vertex.hpp"
 #include "velecs/graphics/Mesh.hpp"
 #include "velecs/graphics/Shader.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
+#include "velecs/graphics/DescriptorLayoutBuilder.hpp"
+#include "velecs/graphics/RenderPipelineLayoutBuilder.hpp"
+#include "velecs/graphics/RenderPipelineBuilder.hpp"
+#include "velecs/graphics/ComputePipelineBuilder.hpp"
+#include "velecs/graphics/PipelineBuilder.hpp"
 #include "velecs/graphics/Components/MeshRenderer.hpp"
 #include "velecs/graphics/Components/PerspectiveCamera.hpp"
 #include "velecs/graphics/Components/OrthographicCamera.hpp"
@@ -668,9 +669,11 @@ bool RenderEngine::InitDescriptors()
 
 bool RenderEngine::InitPipelines()
 {
+    if (!InitBackgroundPipeline()) return false;
+
     RasterizationShaderProgram program{};
-    program.vert = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT, "internal/shaders/basic.vert.spv");
-    program.frag = Shader::FromFile(_device, VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT, "internal/shaders/basic.frag.spv");
+    program.vert = VertexShader::FromFile(_device, "internal/shaders/basic.vert.spv");
+    program.frag = FragmentShader::FromFile(_device, "internal/shaders/basic.frag.spv");
 
     // Material mat{};
     // mat.shaderProgram = program;
@@ -713,13 +716,13 @@ bool RenderEngine::InitPipelines()
     //     return false;
     // }
 
-    // RenderPipelineLayout pipelineLayout{};
+    // RenderPipelineLayoutBuilder pipelineLayout{};
     // pipelineLayout.SetDevice(_device)
     //     // .AddDescriptorSetLayout(_objectDescriptorSetLayout)
     //     ;
     // _opaquePipelineLayout = pipelineLayout.GetLayout();
 
-    // RenderPipeline pipeline{};
+    // RenderPipelineBuilder pipeline{};
     // pipeline.SetDevice(_device)
     //     .SetRenderPass(_renderPass)
     //     .SetViewport(GetWindowExtent())
@@ -929,6 +932,37 @@ void RenderEngine::CleanupSwapchain()
     {
         vkDestroyImageView(_device, _swapchainImageViews[i], nullptr);
     }
+}
+
+bool RenderEngine::InitBackgroundPipeline()
+{
+    ComputeShaderProgram _gradientProgram{};
+    _gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient.comp.spv");
+    if (!_gradientProgram.IsValid())
+    {
+        std::cerr << "Gradient program is not valid!" << std::endl;
+        return false;
+    }
+
+    VkPipelineLayoutCreateInfo computeLayout{};
+	computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	computeLayout.pNext = nullptr;
+	computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
+	computeLayout.setLayoutCount = 1;
+
+    VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_gradientPipelineLayout);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
+    }
+
+    ComputePipelineBuilder builder;
+    builder.SetDevice(_device)
+        .SetPipelineLayout(_gradientPipelineLayout)
+        .SetComputeShader(_gradientProgram.comp)
+        ;
+
+    return true;
 }
 
 FrameData& RenderEngine::GetCurrentFrame()
