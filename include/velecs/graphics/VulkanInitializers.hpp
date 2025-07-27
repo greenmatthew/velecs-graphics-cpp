@@ -12,6 +12,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <string>
+
 namespace velecs::graphics {
 
 VkCommandPoolCreateInfo VkExtCommandPoolCreateInfo(const uint32_t queueFamilyIndex, const VkCommandPoolCreateFlags flags = 0);
@@ -44,12 +46,22 @@ VkImageCreateInfo VkExtImageCreateInfo(const VkFormat format, const VkExtent3D e
 
 VkImageViewCreateInfo VkExtImageviewCreateInfo(const VkFormat format, const VkImage image, const VkImageAspectFlags aspectFlags);
 
+VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(
+    const VkShaderStageFlagBits stage,
+    const VkShaderModule shaderModule,
+    const std::string& entryPoint = "main"
+);
 
 
 
 
 
-VkPipelineShaderStageCreateInfo VkExtPipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
+
+
+
+
+
+
 
 VkPipelineVertexInputStateCreateInfo VkExtVertexInputStateCreateInfo();
 

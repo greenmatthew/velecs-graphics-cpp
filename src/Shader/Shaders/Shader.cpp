@@ -91,7 +91,7 @@ void Shader::BuildFromCode()
     }
 
     _module = CreateModuleFromCode(_spirvCode);
-    _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module);
+    _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module, _entryPoint);
 }
 
 void Shader::BuildFromFile()
