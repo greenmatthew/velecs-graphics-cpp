@@ -10,8 +10,12 @@
 
 #pragma once
 
-#include "velecs/graphics/Shader/IShaderProgram.hpp"
-#include "velecs/graphics/Shader/Shader.hpp"
+#include "velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp"
+#include "velecs/graphics/Shader/Shaders/VertexShader.hpp"
+#include "velecs/graphics/Shader/Shaders/GeometryShader.hpp"
+#include "velecs/graphics/Shader/Shaders/FragmentShader.hpp"
+#include "velecs/graphics/Shader/Shaders/TessellationControlShader.hpp"
+#include "velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp"
 
 namespace velecs::graphics {
 
@@ -19,17 +23,17 @@ namespace velecs::graphics {
 /// @brief Brief description.
 ///
 /// Rest of description.
-struct RasterizationShaderProgram : public IShaderProgram {
+struct RasterizationShaderProgram : public ShaderProgramBase {
 public:
     // Enums
 
     // Public Fields
 
-    std::shared_ptr<Shader> vert{nullptr}; /// @brief Vertex shader (required)
-    std::shared_ptr<Shader> frag{nullptr}; /// @brief Fragment shader (required)
-    std::shared_ptr<Shader> geom{nullptr}; /// @brief Geometry shader (optional)
-    std::shared_ptr<Shader> tesc{nullptr}; /// @brief Tessellation control shader (optional - must pair with tese)
-    std::shared_ptr<Shader> tese{nullptr}; /// @brief Tessellation evaluation shader (optional - must pair with tesc)
+    std::shared_ptr<VertexShader> vert{nullptr}; /// @brief Vertex shader (required)
+    std::shared_ptr<FragmentShader> frag{nullptr}; /// @brief Fragment shader (required)
+    std::shared_ptr<GeometryShader> geom{nullptr}; /// @brief Geometry shader (optional)
+    std::shared_ptr<TessellationControlShader> tesc{nullptr}; /// @brief Tessellation control shader (optional - must pair with tese)
+    std::shared_ptr<TessellationEvaluationShader> tese{nullptr}; /// @brief Tessellation evaluation shader (optional - must pair with tesc)
 
     // Constructors and Destructors
 

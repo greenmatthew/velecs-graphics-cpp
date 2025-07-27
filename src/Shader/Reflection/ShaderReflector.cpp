@@ -10,7 +10,7 @@
 
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 
-#include "velecs/graphics/Shader/Shader.hpp"
+#include "velecs/graphics/Shader/Shaders/Shader.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderResource.hpp"
 
 #include <spirv_cross/spirv_cross.hpp>

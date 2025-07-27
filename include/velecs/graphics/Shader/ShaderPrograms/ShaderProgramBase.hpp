@@ -1,4 +1,4 @@
-/// @file    IShaderProgram.hpp
+/// @file    ShaderProgramBase.hpp
 /// @author  Matthew Green
 /// @date    2025-07-14 13:19:49
 /// 
@@ -12,11 +12,11 @@
 
 namespace velecs::graphics {
 
-/// @struct IShaderProgram
+/// @struct ShaderProgramBase
 /// @brief Brief description.
 ///
 /// Rest of description.
-struct IShaderProgram {
+struct ShaderProgramBase {
 public:
     // Enums
 
@@ -25,10 +25,10 @@ public:
     // Constructors and Destructors
 
     /// @brief Default constructor.
-    IShaderProgram() = default;
+    ShaderProgramBase() = default;
 
     /// @brief Virtual destructor for proper cleanup of derived types
-    virtual ~IShaderProgram() = default;
+    virtual ~ShaderProgramBase() = 0;
 
     // Public Methods
 

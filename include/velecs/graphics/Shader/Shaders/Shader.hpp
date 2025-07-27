@@ -37,46 +37,6 @@ public:
 
     // Constructors and Destructors
 
-    /// @brief Constructor access key to enforce factory method usage
-    class ConstructorKey {
-        friend class Shader;
-        ConstructorKey() = default;
-    };
-
-    /// @brief Constructor for creating a shader from file (use factory methods instead)
-    /// @param device The Vulkan device handle
-    /// @param stage The shader stage type
-    /// @param relPath Path to the SPIR-V file relative to the assets directory
-    /// @param entryPoint The entry point function name
-    /// @param key Access key (only accessible via factory methods)
-    inline Shader(
-        VkDevice device,
-        VkShaderStageFlagBits stage,
-        const std::filesystem::path& relPath,
-        const std::string& entryPoint,
-        ConstructorKey key
-    ) : _device(device), _stage(stage), _relPath(relPath), _entryPoint(entryPoint) 
-    {
-        BuildFromFile();
-    }
-
-    /// @brief Constructor for creating a shader from code (use factory methods instead)
-    /// @param device The Vulkan device handle
-    /// @param stage The shader stage type
-    /// @param spirvCode The compiled SPIR-V bytecode
-    /// @param entryPoint The entry point function name
-    /// @param key Access key (only accessible via factory methods)
-    inline Shader(
-        VkDevice device,
-        VkShaderStageFlagBits stage,
-        const std::vector<uint32_t>& spirvCode,
-        const std::string& entryPoint,
-        ConstructorKey key
-    ) : _device(device), _stage(stage), _spirvCode(spirvCode), _entryPoint(entryPoint)
-    {
-        BuildFromCode();
-    }
-
     /// @brief Destructor - cleans up Vulkan resources
     ~Shader() { Cleanup(); }
 
@@ -89,33 +49,6 @@ public:
     Shader& operator=(Shader&& other) noexcept;
 
     // Public Methods
-
-    /// @brief Creates a shader from SPIR-V bytecode
-    /// @param device The Vulkan device handle
-    /// @param stage The shader stage type
-    /// @param spirvCode The compiled SPIR-V bytecode
-    /// @param entryPoint The entry point function name (default: "main")
-    /// @return Unique pointer to the created shader
-    static std::unique_ptr<Shader> FromCode(
-        VkDevice device,
-        VkShaderStageFlagBits stage,
-        const std::vector<uint32_t>& spirvCode,
-        const std::string& entryPoint = "main"
-    );
-
-    /// @brief Creates a shader from a SPIR-V file in the assets directory
-    /// @param device The Vulkan device handle
-    /// @param stage The shader stage type
-    /// @param relPath Path to the SPIR-V file relative to the assets directory (e.g., "shaders/vertex.spv")
-    /// @param entryPoint The entry point function name (default: "main")
-    /// @return Unique pointer to the created shader
-    /// @note The file path is resolved relative to Paths::AssetsDir()
-    static std::unique_ptr<Shader> FromFile(
-        VkDevice device,
-        VkShaderStageFlagBits stage,
-        const std::filesystem::path& relPath,
-        const std::string& entryPoint = "main"
-    );
 
     /// @brief Checks if the shader module is valid
     /// @return True if the shader module was successfully created
@@ -159,6 +92,23 @@ protected:
 
     // Protected Methods
 
+    /// @brief Constructor for creating a shader from file (use factory methods instead)
+    /// @param device The Vulkan device handle
+    /// @param stage The shader stage type
+    /// @param entryPoint The entry point function name
+    /// @param relPath Path to the SPIR-V file relative to assets directory (empty for code-based)
+    /// @param spirvCode The compiled SPIR-V bytecode (empty for file-based)
+    inline Shader(
+        VkDevice device,
+        VkShaderStageFlagBits stage,
+        const std::string& entryPoint,
+        const std::filesystem::path& relPath,
+        const std::vector<uint32_t>& spirvCode
+    ) : _device(device), _stage(stage), _entryPoint(entryPoint), _relPath(relPath), _spirvCode{spirvCode}
+    {
+        Init();
+    }
+
 private:
     // Private Fields
 
@@ -171,6 +121,8 @@ private:
     VkPipelineShaderStageCreateInfo _stageCreateInfo{};  /// @brief Pipeline stage create info
 
     // Private Methods
+
+    void Init();
 
     /// @brief Builds shader module from stored code (called during construction)
     void BuildFromCode();

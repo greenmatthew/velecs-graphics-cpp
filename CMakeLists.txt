@@ -130,11 +130,20 @@ set(LIB_SOURCES
 
 
     # Shaders
-    src/Shader/Shader.cpp
+    src/Shader/ShaderPrograms/ShaderProgramBase.cpp
+    src/Shader/Shaders/Shader.cpp
+    src/Shader/ShaderPrograms/RasterizationShaderProgram.cpp
+    src/Shader/Shaders/VertexShader.cpp
+    src/Shader/Shaders/GeometryShader.cpp
+    src/Shader/Shaders/FragmentShader.cpp
+    src/Shader/Shaders/TessellationControlShader.cpp
+    src/Shader/Shaders/TessellationEvaluationShader.cpp
+    src/Shader/ShaderPrograms/ComputeShaderProgram.cpp
+    src/Shader/Shaders/ComputeShader.cpp
     src/Shader/Reflection/ShaderResource.cpp
     src/Shader/Reflection/ShaderReflectionData.cpp
     src/Shader/Reflection/ShaderReflector.cpp
-    src/Shader/RasterizationShaderProgram.cpp
+    
 
     src/Color32.cpp
 )
@@ -179,9 +188,16 @@ set(LIB_HEADERS
 
     # Shaders
     include/velecs/graphics/Shader.hpp
-    include/velecs/graphics/Shader/Shader.hpp
-    include/velecs/graphics/Shader/IShaderProgram.hpp
-    include/velecs/graphics/Shader/RasterizationShaderProgram.hpp
+    include/velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp
+    include/velecs/graphics/Shader/Shaders/Shader.hpp
+    include/velecs/graphics/Shader/ShaderPrograms/RasterizationShaderProgram.hpp
+    include/velecs/graphics/Shader/Shaders/VertexShader.hpp
+    include/velecs/graphics/Shader/Shaders/GeometryShader.hpp
+    include/velecs/graphics/Shader/Shaders/FragmentShader.hpp
+    include/velecs/graphics/Shader/Shaders/TessellationControlShader.hpp
+    include/velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp
+    include/velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp
+    include/velecs/graphics/Shader/Shaders/ComputeShader.hpp
     include/velecs/graphics/Shader/Reflection/ShaderResourceType.hpp
     include/velecs/graphics/Shader/Reflection/ShaderResource.hpp
     include/velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp

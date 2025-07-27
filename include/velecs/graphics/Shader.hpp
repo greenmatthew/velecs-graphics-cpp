@@ -10,6 +10,14 @@
 
 #pragma once
 
-#include "velecs/graphics/Shader/Shader.hpp"
-#include "velecs/graphics/Shader/RasterizationShaderProgram.hpp"
-#include "velecs/graphics/Shader/ShaderCache.hpp"
+#include "velecs/graphics/Shader/Shaders/Shader.hpp"
+
+#include "velecs/graphics/Shader/ShaderPrograms/RasterizationShaderProgram.hpp"
+#include "velecs/graphics/Shader/Shaders/VertexShader.hpp"
+#include "velecs/graphics/Shader/Shaders/GeometryShader.hpp"
+#include "velecs/graphics/Shader/Shaders/FragmentShader.hpp"
+#include "velecs/graphics/Shader/Shaders/TessellationControlShader.hpp"
+#include "velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp"
+
+#include "velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp"
+#include "velecs/graphics/Shader/Shaders/ComputeShader.hpp"

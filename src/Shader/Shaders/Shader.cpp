@@ -8,7 +8,7 @@
 /// Unauthorized copying of this file, via any medium is strictly prohibited
 /// Proprietary and confidential
 
-#include "velecs/graphics/Shader/Shader.hpp"
+#include "velecs/graphics/Shader/Shaders/Shader.hpp"
 
 #include <velecs/common/Paths.hpp>
 using namespace velecs::common;
@@ -57,31 +57,20 @@ Shader& Shader::operator=(Shader&& other) noexcept
 
 // Public Methods
 
-std::unique_ptr<Shader> Shader::FromFile(
-    VkDevice device,
-    VkShaderStageFlagBits stage,
-    const std::filesystem::path& relPath,
-    const std::string& entryPoint
-)
-{
-    return std::make_unique<Shader>(device, stage, relPath, entryPoint, ConstructorKey{});
-}
-
-std::unique_ptr<Shader> Shader::FromCode(
-    VkDevice device,
-    VkShaderStageFlagBits stage,
-    const std::vector<uint32_t>& spirvCode,
-    const std::string& entryPoint
-)
-{
-    return std::make_unique<Shader>(device, stage, spirvCode, entryPoint, ConstructorKey{});
-}
-
 Shader& Shader::Reload()
 {
     // Clean up existing module first
     Cleanup();
 
+    Init();
+
+    return *this;
+}
+
+// Private Methods
+
+void Shader::Init()
+{
     if (_relPath.empty())
     {
         // Rebuild from stored SPIR-V code
@@ -92,11 +81,7 @@ Shader& Shader::Reload()
         // Rebuild from file (re-reads from disk)
         BuildFromFile();
     }
-
-    return *this;
 }
-
-// Private Methods
 
 void Shader::BuildFromCode()
 {
