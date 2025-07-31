@@ -60,6 +60,8 @@ public:
     // Public Methods
 
     SDL_AppResult Init();
+    void StartGUI();
+    void EndGUI();
     void Draw();
     void Cleanup();
 

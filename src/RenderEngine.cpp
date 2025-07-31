@@ -76,19 +76,22 @@ SDL_AppResult RenderEngine::Init()
     return SDL_APP_CONTINUE;
 }
 
-void RenderEngine::Draw()
+void RenderEngine::StartGUI()
 {
     // Start the Dear ImGui frame
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
+}
 
-    // Some imgui UI to test
-    ImGui::ShowDemoWindow();
-
+void RenderEngine::EndGUI()
+{
     // Make imgui calculate internal draw structures
     ImGui::Render();
+}
 
+void RenderEngine::Draw()
+{
     // Wait until the GPU has finished rendering the last frame. Timeout of 1 second
     VkResult result = vkWaitForFences(_device, 1, &(GetCurrentFrame().renderFence), true, 1000000000);
     if (result != VK_SUCCESS)
@@ -153,77 +156,6 @@ void RenderEngine::Draw()
     TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     DrawBackground(cmd);
-
-    // vkCmdBindPipeline(_mainCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
-
-    // VkViewport viewport = {};
-    // viewport.x = 0.0f;
-    // viewport.y = 0.0f;
-    // auto windowExtent = GetWindowExtent();
-    // viewport.width = static_cast<float>(windowExtent.width);
-    // viewport.height = static_cast<float>(windowExtent.height);
-    // viewport.minDepth = 0.0f;
-    // viewport.maxDepth = 1.0f;
-
-    // VkRect2D scissor = {};
-    // scissor.offset = {0, 0};
-    // scissor.extent = {static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height)};
-
-    // vkCmdSetViewport(_mainCommandBuffer, 0, 1, &viewport);
-    // vkCmdSetScissor(_mainCommandBuffer, 0, 1, &scissor);
-
-    // auto& registry = Registry::Get();
-
-    // // Get the first active camera that also has a Transform and throw an error if more are found
-    // Camera* cam{nullptr};
-    // registry.view<PerspectiveCamera, Transform>().each([&registry, &cam](auto e, auto& pCam, auto& transform){
-    //     if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
-    //     else cam = &pCam;
-    // });
-    // registry.view<OrthographicCamera, Transform>().each([&cam](auto e, auto& oCam, auto& transform){
-    //     if (cam) throw std::runtime_error("Currently a single active camera is all that is supported.");
-    //     else cam = &oCam;
-    // });
-
-    // if (cam)
-    // {
-    //     auto view = registry.view<Transform, MeshRenderer>();
-    //     view.each([&](auto e, Transform& transform, MeshRenderer& renderer) {
-    //         Entity entity{e};
-
-    //         if (renderer.mesh != nullptr)
-    //         {
-    //             // Upload mesh if dirty
-    //             if (renderer.mesh->IsDirty())
-    //             {
-    //                 renderer.mesh->UploadImmediately(_device, _allocator, [this](std::function<void(VkCommandBuffer)> func) {
-    //                     ImmediateSubmit(std::move(func));
-    //                 });
-    //             }
-
-    //             // ObjectUniforms uniforms{ transform.GetWorldMatrix(), Color32::RED };
-
-    //             // // Pass the descriptor pool and layout
-    //             // renderer.mesh->UploadModelUniformsImmediate(
-    //             //     _device, 
-    //             //     _allocator, 
-    //             //     _descriptorPool,                    // Add this
-    //             //     _objectDescriptorSetLayout,         // Add this
-    //             //     uniforms, 
-    //             //     [this](std::function<void(VkCommandBuffer)> func) {
-    //             //         ImmediateSubmit(std::move(func));
-    //             //     }
-    //             // );
-
-    //             // Draw the mesh
-    //             renderer.mesh->Draw(_mainCommandBuffer, _opaquePipelineLayout);
-    //         }
-    //     });
-    // }
-
-    // Rendering imgui
-    // ImGui::Render();
-    // ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), _mainCommandBuffer);
 
     // Transition the draw image and the swapchain image to their correct transfer layouts
     TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
