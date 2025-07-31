@@ -25,9 +25,7 @@
 #include "velecs/graphics/Components/OrthographicCamera.hpp"
 #include "velecs/graphics/ObjectUniforms.hpp"
 
-#include <velecs/ecs/Registry.hpp>
-#include <velecs/ecs/Entity.hpp>
-#include <velecs/ecs/Components/Transform.hpp>
+#include <velecs/ecs/Common.hpp>
 using namespace velecs::ecs;
 
 #include <VkBootstrap.h>
