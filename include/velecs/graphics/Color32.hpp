@@ -11,6 +11,7 @@
 #pragma once
 
 #include <velecs/math/Vec4.hpp>
+using velecs::math::Vec4;
 
 #include <glm/vec4.hpp>
 
@@ -28,8 +29,6 @@ public:
     // Enums
 
     // Public Fields
-
-    using Vec4 = velecs::math::Vec4;
 
     static const Color32 RED;
     static const Color32 GREEN;

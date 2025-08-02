@@ -18,6 +18,8 @@
 #include "velecs/graphics/Memory/AllocatedBuffer.hpp"
 #include "velecs/graphics/Memory/DescriptorAllocator.hpp"
 
+#include "velecs/graphics/ComputeEffect.hpp"
+
 #include "velecs/graphics/Mesh.hpp"
 
 #include <vulkan/vulkan.h>
@@ -112,6 +114,9 @@ private:
 
     VkPipelineLayout _gradientPipelineLayout{nullptr};
     VkPipeline _gradientPipeline{nullptr};
+
+    std::vector<ComputeEffect> _backgroundEffects;
+    size_t _currentBackgroundEffect{0};
 
     // Private Methods
 

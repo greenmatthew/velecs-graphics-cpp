@@ -24,6 +24,7 @@
 #include "velecs/graphics/Components/PerspectiveCamera.hpp"
 #include "velecs/graphics/Components/OrthographicCamera.hpp"
 #include "velecs/graphics/ObjectUniforms.hpp"
+#include "velecs/graphics/ComputePushConstants.hpp"
 
 #include <velecs/ecs/Common.hpp>
 using namespace velecs::ecs;
@@ -173,10 +174,10 @@ void RenderEngine::Draw()
     );
 
     // Draw imgui into the swapchain image
-	DrawImgui(cmd,  _swapchainImageViews[swapchainImageIndex]);
+    DrawImgui(cmd,  _swapchainImageViews[swapchainImageIndex]);
 
     // Set swapchain image layout to Present so we can draw it
-	TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // Finalize the command buffer (we can no longer add commands, but it can now be executed)
     result = vkEndCommandBuffer(cmd);
@@ -359,10 +360,10 @@ bool RenderEngine::InitVulkan()
     features13.synchronization2 = true;
 
     // Vulkan 1.2 features
-	VkPhysicalDeviceVulkan12Features features12{};
+    VkPhysicalDeviceVulkan12Features features12{};
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	features12.bufferDeviceAddress = true;
-	features12.descriptorIndexing = true;
+    features12.bufferDeviceAddress = true;
+    features12.descriptorIndexing = true;
 
     // Use vkbootstrap to select a GPU.
     // We want a GPU that can write to the SDL surface and supports our version of Vulkan
@@ -888,11 +889,11 @@ bool RenderEngine::InitImgui()
     ImGui_ImplVulkan_Init(&init_info);
 
     // add the destroy the imgui created structures
-	_mainDeletionQueue.PushDeleter([=]() {
-		ImGui_ImplVulkan_Shutdown();
+    _mainDeletionQueue.PushDeleter([=]() {
+        ImGui_ImplVulkan_Shutdown();
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
-	});
+    });
 
     return true;
 }
@@ -955,19 +956,26 @@ void RenderEngine::CleanupSwapchain()
 
 bool RenderEngine::InitBackgroundPipeline()
 {
-    ComputeShaderProgram _gradientProgram{};
-    _gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient.comp.spv");
-    if (!_gradientProgram.IsValid())
+    ComputeShaderProgram gradientProgram{};
+    gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv");
+    if (!gradientProgram.IsValid())
     {
         std::cerr << "Gradient program is not valid!" << std::endl;
         return false;
     }
 
+    VkPushConstantRange pushConstant{};
+    pushConstant.offset = 0;
+    pushConstant.size = sizeof(ComputePushConstants);
+    pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
     VkPipelineLayoutCreateInfo computeLayout{};
-	computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	computeLayout.pNext = nullptr;
-	computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
-	computeLayout.setLayoutCount = 1;
+    computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    computeLayout.pNext = nullptr;
+    computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
+    computeLayout.setLayoutCount = 1;
+    computeLayout.pPushConstantRanges = &pushConstant;
+    computeLayout.pushConstantRangeCount = 1;
 
     VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_gradientPipelineLayout);
     if (result != VK_SUCCESS)
@@ -978,12 +986,12 @@ bool RenderEngine::InitBackgroundPipeline()
     _gradientPipeline = ComputePipelineBuilder{}
         .SetDevice(_device)
         .SetPipelineLayout(_gradientPipelineLayout)
-        .SetComputeShader(_gradientProgram.comp)
+        .SetComputeShader(gradientProgram.comp)
         .GetPipeline()
         ;
     
     // Not necessary: `~Shader` already cleans up once it goes out of scope....
-    // vkDestroyShaderModule(_device, _gradientProgram.comp->GetShaderModule(), nullptr);
+    // vkDestroyShaderModule(_device, gradientProgram.comp->GetShaderModule(), nullptr);
     
     _mainDeletionQueue.PushDeleter([&](){
         vkDestroyPipelineLayout(_device, _gradientPipelineLayout, nullptr);
@@ -1084,16 +1092,21 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     // vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
     // Bind the gradient drawing compute pipeline
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipeline);
 
-	// Bind the descriptor set containing the draw image for the compute pipeline
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipelineLayout, 0, 1, &_drawImageDescriptors, 0, nullptr);
+    // Bind the descriptor set containing the draw image for the compute pipeline
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipelineLayout, 0, 1, &_drawImageDescriptors, 0, nullptr);
 
-	// Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
+    ComputePushConstants pc;
+    pc.data1 = static_cast<Vec4>(Color32::RED);
+    pc.data2 = static_cast<Vec4>(Color32::BLUE);
+    vkCmdPushConstants(cmd, _gradientPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants), &pc);
+
+    // Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
     uint32_t groupCountX = static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f));
     uint32_t groupCountY = static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f));
     uint32_t groupCountZ = 1U;
-	vkCmdDispatch(cmd, groupCountX, groupCountY, groupCountZ);
+    vkCmdDispatch(cmd, groupCountX, groupCountY, groupCountZ);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)
@@ -1103,13 +1116,13 @@ void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView target
         nullptr,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     );
-	VkRenderingInfo renderInfo = VkExtRenderingInfo(_swapchainExtent, &colorAttachment, nullptr);
+    VkRenderingInfo renderInfo = VkExtRenderingInfo(_swapchainExtent, &colorAttachment, nullptr);
 
-	vkCmdBeginRendering(cmd, &renderInfo);
+    vkCmdBeginRendering(cmd, &renderInfo);
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
-	vkCmdEndRendering(cmd);
+    vkCmdEndRendering(cmd);
 }
 
 void RenderEngine::ImmediateSubmit(std::function<void(VkCommandBuffer)>&& function)
