@@ -27,7 +27,8 @@ public:
     // Public Fields
 
     std::vector<ShaderResource> uniformBuffers;
-    std::vector<ShaderResource> textures;
+    std::vector<ShaderResource> storageImages;
+    std::vector<ShaderResource> sampledImages;
     std::vector<ShaderResource> pushConstants;
 
     // Constructors and Destructors
@@ -42,7 +43,7 @@ public:
 
     inline bool HasPushConstants() const { return pushConstants.size() > 0; }
 
-    inline bool HasTextures() const { return textures.size() > 0; }
+    inline bool HasTextures() const { return sampledImages.size() > 0; }
 
     // GetVkStructureForPushConstants
     // GetVkStructureForUniformBuffer

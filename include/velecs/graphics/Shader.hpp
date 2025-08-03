@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "velecs/graphics/Shader/PushConstant.hpp"
+
 #include "velecs/graphics/Shader/Shaders/Shader.hpp"
 
 #include "velecs/graphics/Shader/ShaderPrograms/RasterizationShaderProgram.hpp"

@@ -164,6 +164,8 @@ set(LIB_SOURCES
     src/Shader/Shaders/TessellationEvaluationShader.cpp
     src/Shader/ShaderPrograms/ComputeShaderProgram.cpp
     src/Shader/Shaders/ComputeShader.cpp
+    # Shader Reflection
+    src/Shader/Reflection/ShaderMember.cpp
     src/Shader/Reflection/ShaderResource.cpp
     src/Shader/Reflection/ShaderReflectionData.cpp
     src/Shader/Reflection/ShaderReflector.cpp
@@ -211,6 +213,7 @@ set(LIB_HEADERS
 
     # Shaders
     include/velecs/graphics/Shader.hpp
+    include/velecs/graphics/Shader/PushConstant.hpp
     include/velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp
     include/velecs/graphics/Shader/Shaders/Shader.hpp
     include/velecs/graphics/Shader/ShaderPrograms/RasterizationShaderProgram.hpp
@@ -221,6 +224,9 @@ set(LIB_HEADERS
     include/velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp
     include/velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp
     include/velecs/graphics/Shader/Shaders/ComputeShader.hpp
+    # Shader Reflection
+    include/velecs/graphics/Shader/Reflection/ShaderMemberType.hpp
+    include/velecs/graphics/Shader/Reflection/ShaderMember.hpp
     include/velecs/graphics/Shader/Reflection/ShaderResourceType.hpp
     include/velecs/graphics/Shader/Reflection/ShaderResource.hpp
     include/velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp

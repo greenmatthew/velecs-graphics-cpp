@@ -11,6 +11,7 @@
 #pragma once
 
 #include "velecs/graphics/Shader/Reflection/ShaderResourceType.hpp"
+#include "velecs/graphics/Shader/Reflection/ShaderMember.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -30,14 +31,16 @@ public:
 
     // Public Fields
 
-    ShaderResourceType type{ShaderResourceType::Unknown};
-    VkShaderStageFlags stages{0};
+    ShaderResourceType type;
+    VkShaderStageFlags stages;
 
     std::string name;
     uint32_t offset{0};
     uint32_t size{0};
     uint32_t set{0};
     uint32_t binding{0};
+
+    std::vector<ShaderMember> members;
 
     // Constructors and Destructors
 

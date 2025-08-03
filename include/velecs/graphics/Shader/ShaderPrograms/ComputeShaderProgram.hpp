@@ -12,6 +12,9 @@
 
 #include "velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp"
 #include "velecs/graphics/Shader/Shaders/ComputeShader.hpp"
+#include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
+#include "velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp"
+#include "velecs/graphics/Shader/PushConstant.hpp"
 
 #include <memory>
 
@@ -28,6 +31,7 @@ public:
     // Public Fields
 
     std::shared_ptr<ComputeShader> comp;
+    PushConstant pushConstant;
 
     // Constructors and Destructors
 
@@ -48,6 +52,13 @@ public:
     /// @return Number of shader stages that are currently assigned
     size_t GetStageCount() const override;
 
+    template<typename PushConstantType>
+    void SetPushConstant(const PushConstantType& data)
+    {
+        ShaderReflectionData reflectionData = Reflect(*comp.get());
+        pushConstant.Set(data, reflectionData);
+    }
+
 protected:
     // Protected Fields
 
@@ -60,6 +71,8 @@ protected:
 
 private:
     // Private Fields
+
+    std::vector<uint8_t> pushConstantData;
 
     // Private Methods
 };

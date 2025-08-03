@@ -18,6 +18,7 @@
 #include "velecs/graphics/Memory/AllocatedBuffer.hpp"
 #include "velecs/graphics/Memory/DescriptorAllocator.hpp"
 
+#include "velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp"
 #include "velecs/graphics/ComputeEffect.hpp"
 
 #include "velecs/graphics/Mesh.hpp"
@@ -112,6 +113,7 @@ private:
     VkDescriptorSetLayout _drawImageDescriptorLayout{VK_NULL_HANDLE};
     VkDescriptorSet _drawImageDescriptors{nullptr};
 
+    ComputeShaderProgram _gradientProgram;
     VkPipelineLayout _gradientPipelineLayout{nullptr};
     VkPipeline _gradientPipeline{nullptr};
 

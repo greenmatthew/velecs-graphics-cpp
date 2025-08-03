@@ -20,7 +20,8 @@ enum class ShaderResourceType {
     Unknown = 0,
     PushConstant,
     UniformBuffer,
-    Texture2D,
+    StorageImage,
+    SampledImage,
 };
 
 } // namespace velecs::graphics

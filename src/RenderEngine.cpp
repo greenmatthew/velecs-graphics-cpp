@@ -956,13 +956,13 @@ void RenderEngine::CleanupSwapchain()
 
 bool RenderEngine::InitBackgroundPipeline()
 {
-    ComputeShaderProgram gradientProgram{};
-    gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv");
-    if (!gradientProgram.IsValid())
+    _gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv");
+    if (!_gradientProgram.IsValid())
     {
         std::cerr << "Gradient program is not valid!" << std::endl;
         return false;
     }
+    std::cout << Reflect(*_gradientProgram.comp.get()) << std::endl;
 
     VkPushConstantRange pushConstant{};
     pushConstant.offset = 0;
@@ -986,7 +986,7 @@ bool RenderEngine::InitBackgroundPipeline()
     _gradientPipeline = ComputePipelineBuilder{}
         .SetDevice(_device)
         .SetPipelineLayout(_gradientPipelineLayout)
-        .SetComputeShader(gradientProgram.comp)
+        .SetComputeShader(_gradientProgram.comp)
         .GetPipeline()
         ;
     
@@ -1097,10 +1097,20 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     // Bind the descriptor set containing the draw image for the compute pipeline
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipelineLayout, 0, 1, &_drawImageDescriptors, 0, nullptr);
 
+    
     ComputePushConstants pc;
     pc.data1 = static_cast<Vec4>(Color32::RED);
     pc.data2 = static_cast<Vec4>(Color32::BLUE);
-    vkCmdPushConstants(cmd, _gradientPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants), &pc);
+    _gradientProgram.SetPushConstant<ComputePushConstants>(pc);
+    
+    vkCmdPushConstants(
+        cmd,
+        _gradientPipelineLayout,
+        VK_SHADER_STAGE_COMPUTE_BIT,
+        0,
+        _gradientProgram.pushConstant.GetSize(),
+        _gradientProgram.pushConstant.GetData()
+    );
 
     // Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
     uint32_t groupCountX = static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f));

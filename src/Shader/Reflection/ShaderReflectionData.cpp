@@ -23,7 +23,7 @@ ShaderReflectionData ShaderReflectionData::Merge(const ShaderReflectionData& oth
     ShaderReflectionData merged;
     
     merged.uniformBuffers = MergeResourceVector(uniformBuffers, other.uniformBuffers);
-    merged.textures = MergeResourceVector(textures, other.textures);
+    merged.sampledImages = MergeResourceVector(sampledImages, other.sampledImages);
     merged.pushConstants = MergeResourceVector(pushConstants, other.pushConstants);
     
     return merged;
@@ -33,34 +33,47 @@ std::ostream& operator<<(std::ostream& os, const ShaderReflectionData& data) {
     os << "ShaderReflectionData {\n";
     
     // Push Constants section
-    if (!data.pushConstants.empty()) {
-        os << "  Push Constants (" << data.pushConstants.size() << "):\n";
-        for (const auto& resource : data.pushConstants) {
-            os << "    " << resource << "\n";
+    if (!data.pushConstants.empty())
+    {
+        os << "Push Constants: [\n\n";
+        for (const auto& resource : data.pushConstants)
+        {
+            os << resource << "\n";
         }
-        os << "\n";
+        os << "]\n\n";
     }
     
     // Uniform Buffers section
-    if (!data.uniformBuffers.empty()) {
-        os << "  Uniform Buffers (" << data.uniformBuffers.size() << "):\n";
-        for (const auto& resource : data.uniformBuffers) {
-            os << "    " << resource << "\n";
+    if (!data.uniformBuffers.empty())
+    {
+        os << "Uniform Buffers: [\n\n";
+        for (const auto& resource : data.uniformBuffers)
+        {
+            os << resource << "\n";
         }
-        os << "\n";
+        os << "]\n\n";
+    }
+
+    // Storage images section
+    if (!data.storageImages.empty()) {
+        os << "Storage Images: [\n\n";
+        for (const auto& resource : data.storageImages)
+        {
+            os << resource << "\n";
+        }
+        os << "]\n\n";
     }
     
-    // Textures section
-    if (!data.textures.empty()) {
-        os << "  Textures (" << data.textures.size() << "):\n";
-        for (const auto& resource : data.textures) {
-            os << "    " << resource << "\n";
+    // Sampled images section
+    if (!data.sampledImages.empty()) {
+        os << "Sampled Images: [\n\n";
+        for (const auto& resource : data.sampledImages)
+        {
+            os << resource << (data.sampledImages.size() > 1 ? "," : "") << "\n";
         }
-        os << "\n";
+        os << "]\n\n";
     }
     
-    // Summary
-    os << "  Total Resources: " << (data.pushConstants.size() + data.uniformBuffers.size() + data.textures.size()) << "\n";
     os << "}";
     
     return os;

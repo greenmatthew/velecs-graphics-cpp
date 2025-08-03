@@ -40,6 +40,7 @@ bool ShaderResource::operator!=(const ShaderResource& other) const
 std::ostream& operator<<(std::ostream& os, const ShaderResource& resource)
 {
     os << "ShaderResource {\n";
+    os << "  name: " << resource.name << "\n";
     os << "  type: ";
     
     // Convert enum to string
@@ -47,7 +48,8 @@ std::ostream& operator<<(std::ostream& os, const ShaderResource& resource)
         case ShaderResourceType::Unknown: os << "Unknown"; break;
         case ShaderResourceType::PushConstant: os << "PushConstant"; break;
         case ShaderResourceType::UniformBuffer: os << "UniformBuffer"; break;
-        case ShaderResourceType::Texture2D: os << "Texture2D"; break;
+        case ShaderResourceType::StorageImage: os << "StorageImage"; break;
+        case ShaderResourceType::SampledImage: os << "SampledImage"; break;
         default: os << "Unknown(" << static_cast<int>(resource.type) << ")"; break;
     }
     os << "\n";
@@ -75,11 +77,21 @@ std::ostream& operator<<(std::ostream& os, const ShaderResource& resource)
     // Add more stages as needed
     os << ")\n";
     
-    os << "  name: \"" << resource.name << "\"\n";
     os << "  offset: " << resource.offset << "\n";
     os << "  size: " << resource.size << "\n";
     os << "  set: " << resource.set << "\n";
     os << "  binding: " << resource.binding << "\n";
+
+    if (resource.members.size() > 0)
+    {
+        os << "  members: {\n";
+        for (const auto& member : resource.members)
+        {
+            std::cout << "    " << member << std::endl;
+        }
+        os << "  }\n";
+    }
+
     os << "}";
     
     return os;
