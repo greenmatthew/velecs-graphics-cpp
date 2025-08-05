@@ -64,10 +64,10 @@ ShaderMemberType MapSpirVTypeToShaderMemberType(const spirv_cross::SPIRType& spi
         break;
         
     case spirv_cross::SPIRType::Struct: return ShaderMemberType::Struct;
-    
-    // Default fallback
-    default: return ShaderMemberType::Unknown;
     }
+
+    // Default fallback
+    return ShaderMemberType::Unknown;
 }
 
 std::vector<ShaderMember> ExtractStructMembers(const spirv_cross::Compiler& compiler, const spirv_cross::SPIRType& structType)

@@ -90,7 +90,7 @@ void RenderEngine::StartGUI()
     
         ImGui::Text("Selected effect: ", _currentBackgroundEffect);
     
-        ImGui::SliderInt("Effect Index", &_currentBackgroundEffect, 0, _backgroundEffects.size() - 1);
+        ImGui::SliderInt("Effect Index", &_currentBackgroundEffect, 0, static_cast<uint32_t>(_backgroundEffects.size() - 1));
 
         ComputePushConstants& pushConstant = effect->GetPushConstant<ComputePushConstants>();
     
