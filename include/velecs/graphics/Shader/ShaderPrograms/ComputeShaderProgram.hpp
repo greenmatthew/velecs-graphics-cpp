@@ -150,10 +150,16 @@ private:
 
     void Cleanup()
     {
-        _comp.reset();
+        if (_comp)
+            _comp.reset();
 
-        vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
-        vkDestroyPipeline(_device, _pipeline, nullptr);
+        if (_device)
+        {
+            if (_pipelineLayout)
+                vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
+            if (_pipeline)
+                vkDestroyPipeline(_device, _pipeline, nullptr);
+        }
     }
 };
 
