@@ -20,12 +20,67 @@ namespace velecs::graphics {
 
 bool ComputeShaderProgram::IsComplete() const
 {
-    return comp ? true : false;
+    return _comp ? true : false;
 }
 
 size_t ComputeShaderProgram::GetStageCount() const
 {
-    return comp ? 1 : 0;
+    return _comp ? 1 : 0;
+}
+
+void ComputeShaderProgram::SetComputeShader(const std::shared_ptr<ComputeShader>& shader)
+{
+    _comp = shader;
+}
+
+void ComputeShaderProgram::SetDescriptor(const VkDescriptorSetLayout descriptorSetLayout, const VkDescriptorSet descriptorSet)
+{
+    _descriptorSetLayout = descriptorSetLayout;
+    _descriptorSet = descriptorSet;
+}
+
+void ComputeShaderProgram::SetGroupCount(const uint32_t x, const uint32_t y/* = 1*/, const uint32_t z/* = 1*/)
+{
+    _numGroupsX = x;
+    _numGroupsY = y;
+    _numGroupsZ = z;
+}
+
+void ComputeShaderProgram::Init(const VkDevice device)
+{
+    InitPipelineLayout(device);
+    InitPipeline(device);
+    _initialized = true;
+}
+
+void ComputeShaderProgram::Dispatch(const VkCommandBuffer cmd)
+{
+    assert(cmd && "Command buffer must be valid");
+    assert(_initialized && "Failed to call Init()");
+    assert(_numGroupsX.has_value() && "Number of groups on X must be valid");
+    assert(_numGroupsY.has_value() && "Number of groups on Y must be valid");
+    assert(_numGroupsZ.has_value() && "Number of groups on Z must be valid");
+
+    // Bind the gradient drawing compute pipeline
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
+
+    // Bind the descriptor set containing the draw image for the compute pipeline
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipelineLayout, 0, 1, &_descriptorSet, 0, nullptr);
+    
+    // Only push constants if they are set
+    if (_pushConstant.has_value())
+    {
+        vkCmdPushConstants(
+            cmd,
+            _pipelineLayout,
+            VK_SHADER_STAGE_COMPUTE_BIT,
+            0,
+            _pushConstant->GetSize(),
+            _pushConstant->GetData()
+        );
+    }
+
+    vkCmdDispatch(cmd, _numGroupsX.value(), _numGroupsY.value(), _numGroupsZ.value());
 }
 
 // Protected Fields
@@ -34,7 +89,37 @@ size_t ComputeShaderProgram::GetStageCount() const
 
 bool ComputeShaderProgram::ValidateShaders() const
 {
-    return comp && comp->IsValid();
+    return _comp && _comp->IsValid();
+}
+
+void ComputeShaderProgram::InitPipelineLayout(const VkDevice device)
+{
+    VkPipelineLayoutCreateInfo computeLayout{};
+    computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    computeLayout.pNext = nullptr;
+    computeLayout.pSetLayouts = &_descriptorSetLayout;
+    computeLayout.setLayoutCount = 1;
+    
+    if (_pushConstant.has_value())
+    {
+        computeLayout.pPushConstantRanges = &_pushConstant->GetRange();
+        computeLayout.pushConstantRangeCount = 1;
+    }
+
+    VkResult result = vkCreatePipelineLayout(device, &computeLayout, nullptr, &_pipelineLayout);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
+    }
+}
+
+void ComputeShaderProgram::InitPipeline(const VkDevice device)
+{
+    _pipeline = ComputePipelineBuilder{}
+        .SetDevice(device)
+        .SetPipelineLayout(_pipelineLayout)
+        .SetComputeShader(_comp)
+        .GetPipeline();
 }
 
 // Private Fields

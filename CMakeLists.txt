@@ -154,6 +154,7 @@ set(LIB_SOURCES
     src/Components/OrthographicCamera.cpp
 
     # Shaders
+    src/Shader/PushConstant.cpp
     src/Shader/ShaderPrograms/ShaderProgramBase.cpp
     src/Shader/Shaders/Shader.cpp
     src/Shader/ShaderPrograms/RasterizationShaderProgram.cpp

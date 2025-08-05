@@ -956,39 +956,44 @@ void RenderEngine::CleanupSwapchain()
 
 bool RenderEngine::InitBackgroundPipeline()
 {
-    _gradientProgram.comp = ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv");
-    if (!_gradientProgram.IsValid())
-    {
-        std::cerr << "Gradient program is not valid!" << std::endl;
-        return false;
-    }
-    std::cout << Reflect(*_gradientProgram.comp.get()) << std::endl;
+    _gradientProgram.SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv"));
+    _gradientProgram.SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
+    _gradientProgram.ConfigurePushConstants<ComputePushConstants>();
+    _gradientProgram.Init(_device);
 
-    VkPushConstantRange pushConstant{};
-    pushConstant.offset = 0;
-    pushConstant.size = sizeof(ComputePushConstants);
-    pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    // _gradientProgram.comp = ;
+    // if (!_gradientProgram.IsValid())
+    // {
+    //     std::cerr << "Gradient program is not valid!" << std::endl;
+    //     return false;
+    // }
+    // std::cout << Reflect(*_gradientProgram.comp.get()) << std::endl;
 
-    VkPipelineLayoutCreateInfo computeLayout{};
-    computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    computeLayout.pNext = nullptr;
-    computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
-    computeLayout.setLayoutCount = 1;
-    computeLayout.pPushConstantRanges = &pushConstant;
-    computeLayout.pushConstantRangeCount = 1;
+    // VkPushConstantRange pushConstant{};
+    // pushConstant.offset = 0;
+    // pushConstant.size = sizeof(ComputePushConstants);
+    // pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_gradientPipelineLayout);
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
-    }
+    // VkPipelineLayoutCreateInfo computeLayout{};
+    // computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    // computeLayout.pNext = nullptr;
+    // computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
+    // computeLayout.setLayoutCount = 1;
+    // computeLayout.pPushConstantRanges = &pushConstant;
+    // computeLayout.pushConstantRangeCount = 1;
 
-    _gradientPipeline = ComputePipelineBuilder{}
-        .SetDevice(_device)
-        .SetPipelineLayout(_gradientPipelineLayout)
-        .SetComputeShader(_gradientProgram.comp)
-        .GetPipeline()
-        ;
+    // VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_gradientPipelineLayout);
+    // if (result != VK_SUCCESS)
+    // {
+    //     throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
+    // }
+
+    // _gradientPipeline = ComputePipelineBuilder{}
+    //     .SetDevice(_device)
+    //     .SetPipelineLayout(_gradientPipelineLayout)
+    //     .SetComputeShader(_gradientProgram.comp)
+    //     .GetPipeline()
+    //     ;
     
     // Not necessary: `~Shader` already cleans up once it goes out of scope....
     // vkDestroyShaderModule(_device, gradientProgram.comp->GetShaderModule(), nullptr);
@@ -1091,32 +1096,16 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     // // Clear the image
     // vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
-    // Bind the gradient drawing compute pipeline
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipeline);
-
-    // Bind the descriptor set containing the draw image for the compute pipeline
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _gradientPipelineLayout, 0, 1, &_drawImageDescriptors, 0, nullptr);
-
-    
     ComputePushConstants pc;
     pc.data1 = static_cast<Vec4>(Color32::RED);
     pc.data2 = static_cast<Vec4>(Color32::BLUE);
-    _gradientProgram.SetPushConstant<ComputePushConstants>(pc);
-    
-    vkCmdPushConstants(
-        cmd,
-        _gradientPipelineLayout,
-        VK_SHADER_STAGE_COMPUTE_BIT,
-        0,
-        _gradientProgram.pushConstant.GetSize(),
-        _gradientProgram.pushConstant.GetData()
-    );
-
+    _gradientProgram.UpdatePushConstants<ComputePushConstants>(pc);
     // Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
-    uint32_t groupCountX = static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f));
-    uint32_t groupCountY = static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f));
-    uint32_t groupCountZ = 1U;
-    vkCmdDispatch(cmd, groupCountX, groupCountY, groupCountZ);
+    _gradientProgram.SetGroupCount(
+        static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f)),
+        static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f))
+    );
+    _gradientProgram.Dispatch(cmd);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)

@@ -15,8 +15,10 @@
 #include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
 #include "velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp"
 #include "velecs/graphics/Shader/PushConstant.hpp"
+#include "velecs/graphics/ComputePipelineBuilder.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace velecs::graphics {
 
@@ -29,9 +31,6 @@ public:
     // Enums
 
     // Public Fields
-
-    std::shared_ptr<ComputeShader> comp;
-    PushConstant pushConstant;
 
     // Constructors and Destructors
 
@@ -52,12 +51,42 @@ public:
     /// @return Number of shader stages that are currently assigned
     size_t GetStageCount() const override;
 
+    void SetComputeShader(const std::shared_ptr<ComputeShader>& shader);
+
+    void SetDescriptor(const VkDescriptorSetLayout descriptorSetLayout, const VkDescriptorSet descriptorSet);
+
+    /// @brief Configures push constants for this compute program (call before Init())
     template<typename PushConstantType>
-    void SetPushConstant(const PushConstantType& data)
+    void ConfigurePushConstants()
     {
-        ShaderReflectionData reflectionData = Reflect(*comp.get());
-        pushConstant.Set(data, reflectionData);
+        if (_initialized)
+            throw std::runtime_error("Cannot configure push constants after Init() has been called");
+        
+        if (_comp == nullptr)
+            throw std::runtime_error("Cannot configure push constants without a compute shader assigned");
+
+        ShaderReflectionData reflectionData = Reflect(*_comp.get());
+        _pushConstant = PushConstant::Create<PushConstantType>(VK_SHADER_STAGE_COMPUTE_BIT, reflectionData);
     }
+
+    void Init(const VkDevice device);
+
+    /// @brief Updates push constant data (fast runtime call)
+    template<typename PushConstantType>
+    void UpdatePushConstants(const PushConstantType& data)
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        _pushConstant->UpdateData(data);
+    }
+
+    void SetGroupCount(const uint32_t x, const uint32_t y = 1, const uint32_t z = 1);
+
+    void Dispatch(const VkCommandBuffer cmd);
 
 protected:
     // Protected Fields
@@ -69,10 +98,27 @@ protected:
     /// @return True if all assigned shaders are valid and ready for use
     bool ValidateShaders() const override;
 
+    void InitPipelineLayout(const VkDevice device);
+    void InitPipeline(const VkDevice device);
+
 private:
     // Private Fields
 
-    std::vector<uint8_t> pushConstantData;
+    bool _initialized{false};
+
+    std::shared_ptr<ComputeShader> _comp;
+
+    VkDescriptorSetLayout _descriptorSetLayout{VK_NULL_HANDLE};
+    VkDescriptorSet _descriptorSet{VK_NULL_HANDLE};
+
+    std::optional<PushConstant> _pushConstant;
+
+    std::optional<uint32_t> _numGroupsX{std::nullopt};
+    std::optional<uint32_t> _numGroupsY{std::nullopt};
+    std::optional<uint32_t> _numGroupsZ{std::nullopt};
+
+    VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
+    VkPipeline _pipeline{VK_NULL_HANDLE};
 
     // Private Methods
 };
