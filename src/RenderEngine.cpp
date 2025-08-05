@@ -985,8 +985,15 @@ bool RenderEngine::InitBackgroundPipeline()
     skyProgram->ConfigurePushConstants<ComputePushConstants>();
     skyProgram->Init(_device);
 
+    auto fourColorGradientProgram = std::make_unique<ComputeShaderProgram>();
+    fourColorGradientProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/4_color_gradient.comp.spv"));
+    fourColorGradientProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
+    fourColorGradientProgram->ConfigurePushConstants<ComputePushConstants>();
+    fourColorGradientProgram->Init(_device);
+
     _backgroundEffects.push_back(std::move(gradientProgram));
     _backgroundEffects.push_back(std::move(skyProgram));
+    _backgroundEffects.push_back(std::move(fourColorGradientProgram));
     
     _mainDeletionQueue.PushDeleter([&](){
         _backgroundEffects.clear();
