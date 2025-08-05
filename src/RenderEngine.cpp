@@ -26,6 +26,9 @@
 #include "velecs/graphics/ObjectUniforms.hpp"
 #include "velecs/graphics/ComputePushConstants.hpp"
 
+#include <velecs/common/Paths.hpp>
+using namespace velecs::common;
+
 #include <velecs/ecs/Common.hpp>
 using namespace velecs::ecs;
 
@@ -858,6 +861,10 @@ bool RenderEngine::InitImgui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+
+    static auto iniFilePath = (Paths::PersistentDataDir() / "imgui.ini").string();
+    std::cout << "Dear ImGui .ini file path: " << iniFilePath << std::endl;
+    io.IniFilename = iniFilePath.c_str();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // IF using Docking Branch
