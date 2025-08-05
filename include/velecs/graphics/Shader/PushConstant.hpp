@@ -86,8 +86,48 @@ public:
     /// @brief Gets the size of the push constant data
     inline uint32_t GetSize() const { return static_cast<uint32_t>(_data.size()); }
 
+    /// @brief Gets a mutable reference to the push constant data
+    /// @tparam T The push constant struct type (must match Configure() call)
+    /// @return Reference to the typed data for editing
+    template<typename T>
+    T& GetData()
+    {
+        static_assert(std::is_standard_layout_v<T>, "Push constant type must have standard layout");
+        
+        // Validate type matches configuration
+        if (_typeHash != typeid(T).hash_code() || _typeSize != sizeof(T))
+            throw std::runtime_error("Push constant type mismatch. Type must match Configure() call");
+        
+        // Ensure data is initialized
+        if (_data.empty())
+            throw std::runtime_error("Push constant data not initialized. Call UpdateData() first");
+        
+        // Return reference to typed data
+        return *reinterpret_cast<T*>(_data.data());
+    }
+
+    /// @brief Gets a const reference to the push constant data
+    /// @tparam T The push constant struct type (must match Configure() call)
+    /// @return Const reference to the typed data for reading
+    template<typename T>
+    const T& GetData() const
+    {
+        static_assert(std::is_standard_layout_v<T>, "Push constant type must have standard layout");
+        
+        // Validate type matches configuration
+        if (_typeHash != typeid(T).hash_code() || _typeSize != sizeof(T))
+            throw std::runtime_error("Push constant type mismatch. Type must match Configure() call");
+        
+        // Ensure data is initialized
+        if (_data.empty())
+            throw std::runtime_error("Push constant data not initialized. Call UpdateData() first");
+        
+        // Return const reference to typed data
+        return *reinterpret_cast<const T*>(_data.data());
+    }
+
     /// @brief Gets a pointer to the push constant data
-    inline const uint8_t* GetData() const { return _data.data(); }
+    inline const uint8_t* GetRawData() const { return _data.data(); }
 
     /// @brief Gets the Vulkan push constant range
     /// @return The VkPushConstantRange, or nullopt if not configured

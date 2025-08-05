@@ -38,7 +38,7 @@ public:
     ComputeShaderProgram() = default;
 
     /// @brief Default deconstructor.
-    ~ComputeShaderProgram() = default;
+    inline ~ComputeShaderProgram() override { Cleanup(); }
 
     // Public Methods
 
@@ -71,9 +71,33 @@ public:
 
     void Init(const VkDevice device);
 
+    template<typename PushConstantType>
+    PushConstantType& GetPushConstant()
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        return _pushConstant->GetData<PushConstantType>();
+    }
+
+    template<typename PushConstantType>
+    const PushConstantType& GetPushConstant() const
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        return _pushConstant->GetData<PushConstantType>();
+    }
+
     /// @brief Updates push constant data (fast runtime call)
     template<typename PushConstantType>
-    void UpdatePushConstants(const PushConstantType& data)
+    void UpdatePushConstant(const PushConstantType& data)
     {
         if (!_initialized)
             throw std::runtime_error("Must call Init() before updating push constants");
@@ -98,13 +122,15 @@ protected:
     /// @return True if all assigned shaders are valid and ready for use
     bool ValidateShaders() const override;
 
-    void InitPipelineLayout(const VkDevice device);
-    void InitPipeline(const VkDevice device);
+    void InitPipelineLayout();
+    void InitPipeline();
 
 private:
     // Private Fields
 
     bool _initialized{false};
+
+    VkDevice _device{VK_NULL_HANDLE};
 
     std::shared_ptr<ComputeShader> _comp;
 
@@ -121,6 +147,14 @@ private:
     VkPipeline _pipeline{VK_NULL_HANDLE};
 
     // Private Methods
+
+    void Cleanup()
+    {
+        _comp.reset();
+
+        vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
+        vkDestroyPipeline(_device, _pipeline, nullptr);
+    }
 };
 
 } // namespace velecs::graphics

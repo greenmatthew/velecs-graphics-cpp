@@ -113,12 +113,8 @@ private:
     VkDescriptorSetLayout _drawImageDescriptorLayout{VK_NULL_HANDLE};
     VkDescriptorSet _drawImageDescriptors{nullptr};
 
-    ComputeShaderProgram _gradientProgram;
-    VkPipelineLayout _gradientPipelineLayout{nullptr};
-    VkPipeline _gradientPipeline{nullptr};
-
-    std::vector<ComputeEffect> _backgroundEffects;
-    size_t _currentBackgroundEffect{0};
+    std::vector<std::unique_ptr<ComputeShaderProgram>> _backgroundEffects;
+    int _currentBackgroundEffect{0};
 
     // Private Methods
 

@@ -48,8 +48,11 @@ void ComputeShaderProgram::SetGroupCount(const uint32_t x, const uint32_t y/* = 
 
 void ComputeShaderProgram::Init(const VkDevice device)
 {
-    InitPipelineLayout(device);
-    InitPipeline(device);
+    assert(device != VK_NULL_HANDLE && "Device needs to be valid");
+
+    _device = device;
+    InitPipelineLayout();
+    InitPipeline();
     _initialized = true;
 }
 
@@ -76,7 +79,7 @@ void ComputeShaderProgram::Dispatch(const VkCommandBuffer cmd)
             VK_SHADER_STAGE_COMPUTE_BIT,
             0,
             _pushConstant->GetSize(),
-            _pushConstant->GetData()
+            _pushConstant->GetRawData()
         );
     }
 
@@ -92,7 +95,7 @@ bool ComputeShaderProgram::ValidateShaders() const
     return _comp && _comp->IsValid();
 }
 
-void ComputeShaderProgram::InitPipelineLayout(const VkDevice device)
+void ComputeShaderProgram::InitPipelineLayout()
 {
     VkPipelineLayoutCreateInfo computeLayout{};
     computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -106,17 +109,17 @@ void ComputeShaderProgram::InitPipelineLayout(const VkDevice device)
         computeLayout.pushConstantRangeCount = 1;
     }
 
-    VkResult result = vkCreatePipelineLayout(device, &computeLayout, nullptr, &_pipelineLayout);
+    VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_pipelineLayout);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
     }
 }
 
-void ComputeShaderProgram::InitPipeline(const VkDevice device)
+void ComputeShaderProgram::InitPipeline()
 {
     _pipeline = ComputePipelineBuilder{}
-        .SetDevice(device)
+        .SetDevice(_device)
         .SetPipelineLayout(_pipelineLayout)
         .SetComputeShader(_comp)
         .GetPipeline();

@@ -83,6 +83,23 @@ void RenderEngine::StartGUI()
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
+
+    if (ImGui::Begin("background"))
+    {
+        auto* const effect = _backgroundEffects[_currentBackgroundEffect].get();
+    
+        ImGui::Text("Selected effect: ", _currentBackgroundEffect);
+    
+        ImGui::SliderInt("Effect Index", &_currentBackgroundEffect, 0, _backgroundEffects.size() - 1);
+
+        ComputePushConstants& pushConstant = effect->GetPushConstant<ComputePushConstants>();
+    
+        ImGui::InputFloat4("data1", (float*)&pushConstant.data1);
+        ImGui::InputFloat4("data2", (float*)&pushConstant.data2);
+        ImGui::InputFloat4("data3", (float*)&pushConstant.data3);
+        ImGui::InputFloat4("data4", (float*)&pushConstant.data4);
+    }
+    ImGui::End();
 }
 
 void RenderEngine::EndGUI()
@@ -956,51 +973,23 @@ void RenderEngine::CleanupSwapchain()
 
 bool RenderEngine::InitBackgroundPipeline()
 {
-    _gradientProgram.SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv"));
-    _gradientProgram.SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
-    _gradientProgram.ConfigurePushConstants<ComputePushConstants>();
-    _gradientProgram.Init(_device);
+    auto gradientProgram = std::make_unique<ComputeShaderProgram>();
+    gradientProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv"));
+    gradientProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
+    gradientProgram->ConfigurePushConstants<ComputePushConstants>();
+    gradientProgram->Init(_device);
 
-    // _gradientProgram.comp = ;
-    // if (!_gradientProgram.IsValid())
-    // {
-    //     std::cerr << "Gradient program is not valid!" << std::endl;
-    //     return false;
-    // }
-    // std::cout << Reflect(*_gradientProgram.comp.get()) << std::endl;
+    auto skyProgram = std::make_unique<ComputeShaderProgram>();
+    skyProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/sky.comp.spv"));
+    skyProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
+    skyProgram->ConfigurePushConstants<ComputePushConstants>();
+    skyProgram->Init(_device);
 
-    // VkPushConstantRange pushConstant{};
-    // pushConstant.offset = 0;
-    // pushConstant.size = sizeof(ComputePushConstants);
-    // pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-
-    // VkPipelineLayoutCreateInfo computeLayout{};
-    // computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    // computeLayout.pNext = nullptr;
-    // computeLayout.pSetLayouts = &_drawImageDescriptorLayout;
-    // computeLayout.setLayoutCount = 1;
-    // computeLayout.pPushConstantRanges = &pushConstant;
-    // computeLayout.pushConstantRangeCount = 1;
-
-    // VkResult result = vkCreatePipelineLayout(_device, &computeLayout, nullptr, &_gradientPipelineLayout);
-    // if (result != VK_SUCCESS)
-    // {
-    //     throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
-    // }
-
-    // _gradientPipeline = ComputePipelineBuilder{}
-    //     .SetDevice(_device)
-    //     .SetPipelineLayout(_gradientPipelineLayout)
-    //     .SetComputeShader(_gradientProgram.comp)
-    //     .GetPipeline()
-    //     ;
-    
-    // Not necessary: `~Shader` already cleans up once it goes out of scope....
-    // vkDestroyShaderModule(_device, gradientProgram.comp->GetShaderModule(), nullptr);
+    _backgroundEffects.push_back(std::move(gradientProgram));
+    _backgroundEffects.push_back(std::move(skyProgram));
     
     _mainDeletionQueue.PushDeleter([&](){
-        vkDestroyPipelineLayout(_device, _gradientPipelineLayout, nullptr);
-        vkDestroyPipeline(_device, _gradientPipeline, nullptr);
+        _backgroundEffects.clear();
     });
 
     return true;
@@ -1096,16 +1085,14 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     // // Clear the image
     // vkCmdClearColorImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, &clearValue, 1, &clearRange);
 
-    ComputePushConstants pc;
-    pc.data1 = static_cast<Vec4>(Color32::RED);
-    pc.data2 = static_cast<Vec4>(Color32::BLUE);
-    _gradientProgram.UpdatePushConstants<ComputePushConstants>(pc);
+    auto* const effect = _backgroundEffects[_currentBackgroundEffect].get();
+
     // Execute the compute pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
-    _gradientProgram.SetGroupCount(
+    effect->SetGroupCount(
         static_cast<uint32_t>(std::ceil(_drawExtent.width / 16.0f)),
         static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f))
     );
-    _gradientProgram.Dispatch(cmd);
+    effect->Dispatch(cmd);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)
