@@ -74,13 +74,9 @@ public:
     /// @return The entry point name
     inline const std::string& GetEntryPoint() const { return _entryPoint; }
 
-    /// @brief Gets the Vulkan shader module handle
-    /// @return The shader module handle
-    inline VkShaderModule GetShaderModule() const { return _module; }
-
     /// @brief Gets the pipeline shader stage create info
     /// @return Create info for use with VkGraphicsPipelineCreateInfo
-    inline VkPipelineShaderStageCreateInfo GetCreateInfo() const { return _stageCreateInfo; }
+    VkPipelineShaderStageCreateInfo GetCreateInfo(const VkDevice device);
 
     /// @brief Reloads the shader from its source file (only works for file-based shaders)
     /// @return Reference to this shader for method chaining
@@ -93,18 +89,16 @@ protected:
     // Protected Methods
 
     /// @brief Constructor for creating a shader from file (use factory methods instead)
-    /// @param device The Vulkan device handle
     /// @param stage The shader stage type
     /// @param entryPoint The entry point function name
     /// @param relPath Path to the SPIR-V file relative to assets directory (empty for code-based)
     /// @param spirvCode The compiled SPIR-V bytecode (empty for file-based)
     inline Shader(
-        VkDevice device,
         VkShaderStageFlagBits stage,
         const std::string& entryPoint,
         const std::filesystem::path& relPath,
         const std::vector<uint32_t>& spirvCode
-    ) : _device(device), _stage(stage), _entryPoint(entryPoint), _relPath(relPath), _spirvCode{spirvCode}
+    ) : _stage(stage), _entryPoint(entryPoint), _relPath(relPath), _spirvCode(spirvCode)
     {
         Init();
     }

@@ -123,7 +123,7 @@ protected:
     VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
     VkPipeline _pipeline{VK_NULL_HANDLE};
 
-    VkDevice _device{VK_NULL_HANDLE};
+    VkDevice _device;
 
     // Protected Methods
 

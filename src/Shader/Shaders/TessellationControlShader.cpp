@@ -17,21 +17,19 @@ namespace velecs::graphics {
 // Constructors and Destructors
 
 std::shared_ptr<TessellationControlShader> TessellationControlShader::FromCode(
-    VkDevice device,
     const std::vector<uint32_t>& spirvCode,
     const std::string& entryPoint/* = "main"*/
 )
 {
-    return std::make_shared<TessellationControlShader>(device, entryPoint, std::filesystem::path{}, spirvCode, ConstructorKey{});
+    return std::make_shared<TessellationControlShader>(entryPoint, std::filesystem::path{}, spirvCode, ConstructorKey{});
 }
 
 std::shared_ptr<TessellationControlShader> TessellationControlShader::FromFile(
-    VkDevice device,
     const std::filesystem::path& relPath,
     const std::string& entryPoint/* = "main"*/
 )
 {
-    return std::make_shared<TessellationControlShader>(device, entryPoint, relPath, std::vector<uint32_t>{}, ConstructorKey{});
+    return std::make_shared<TessellationControlShader>(entryPoint, relPath, std::vector<uint32_t>{}, ConstructorKey{});
 }
 
 // Public Methods

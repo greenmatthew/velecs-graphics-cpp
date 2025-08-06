@@ -32,17 +32,15 @@ public:
     };
 
     /// @brief Constructor for creating a shader from file (use factory methods instead)
-    /// @param device The Vulkan device handle
     /// @param entryPoint The entry point function name
     /// @param relPath Path to the SPIR-V file relative to assets directory (empty for code-based)
     /// @param spirvCode The compiled SPIR-V bytecode (empty for file-based)
     inline ComputeShader(
-        VkDevice device,
         const std::string& entryPoint,
         const std::filesystem::path& relPath,
         const std::vector<uint32_t>& spirvCode,
         ConstructorKey
-    ) : Shader(device, VK_SHADER_STAGE_COMPUTE_BIT, entryPoint, relPath, spirvCode) {}
+    ) : Shader(VK_SHADER_STAGE_COMPUTE_BIT, entryPoint, relPath, spirvCode) {}
 
     /// @brief Default constructor.
     ComputeShader() = delete;
@@ -51,24 +49,20 @@ public:
     virtual ~ComputeShader() = default;
 
     /// @brief Creates a compute shader from SPIR-V bytecode
-    /// @param device The Vulkan device handle
     /// @param spirvCode The compiled SPIR-V bytecode
     /// @param entryPoint The entry point function name (default: "main")
     /// @return Shared pointer to the created compute shader
     static std::shared_ptr<ComputeShader> FromCode(
-        VkDevice device,
         const std::vector<uint32_t>& spirvCode,
         const std::string& entryPoint = "main"
     );
 
     /// @brief Creates a compute shader from a SPIR-V file in the assets directory
-    /// @param device The Vulkan device handle
     /// @param relPath Path to the SPIR-V file relative to the assets directory (e.g., "shaders/vertex.spv")
     /// @param entryPoint The entry point function name (default: "main")
     /// @return Shared pointer to the created compute shader
     /// @note The file path is resolved relative to Paths::AssetsDir()
     static std::shared_ptr<ComputeShader> FromFile(
-        VkDevice device,
         const std::filesystem::path& relPath,
         const std::string& entryPoint = "main"
     );

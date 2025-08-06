@@ -24,6 +24,9 @@
 
 #include "velecs/graphics/Mesh.hpp"
 
+#include <velecs/common/NameUuidRegistry.hpp>
+using velecs::common::NameUuidRegistry;
+
 #include <vulkan/vulkan.h>
 
 #include <vma/vk_mem_alloc.h>
@@ -55,15 +58,24 @@ public:
     // Constructors and Destructors
 
     /// @brief Default constructor.
-    inline RenderEngine(SDL_Window* const window)
-        : _window(window) {}
+    RenderEngine() = default;
 
     /// @brief Default deconstructor.
     inline ~RenderEngine() { Cleanup(); }
 
     // Public Methods
 
-    SDL_AppResult Init();
+    template<typename RShaderProgram>
+    void RegisterRasterizationShaderProgram(const std::string& name)
+    {
+        if (!_wasInitialized)
+            throw std::runtime_error("Cannot register a new rasterization shader program if render engine uninitialized.");
+
+        auto [program, uuid] = _rasterPrograms2.EmplaceAs<RShaderProgram>(name);
+        program.Init(_device, _drawImage.imageFormat);
+    }
+
+    SDL_AppResult Init(SDL_Window* const window);
     void StartGUI();
     void EndGUI();
     void Draw();
@@ -116,6 +128,8 @@ private:
 
     std::vector<std::unique_ptr<ComputeShaderProgram>> _backgroundEffects;
     int _currentBackgroundEffect{0};
+
+    NameUuidRegistry<RasterizationShaderProgram> _rasterPrograms2;
 
     std::vector<std::unique_ptr<RasterizationShaderProgram>> _rasterPrograms;
 

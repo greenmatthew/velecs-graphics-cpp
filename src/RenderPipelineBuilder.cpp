@@ -18,45 +18,10 @@ namespace velecs::graphics {
 
 // Public Methods
 
-RenderPipelineBuilder& RenderPipelineBuilder::SetShaders(
-    const std::shared_ptr<VertexShader>& vert,
-    const std::shared_ptr<GeometryShader>& geom,
-    const std::shared_ptr<FragmentShader>& frag,
-    const std::shared_ptr<TessellationControlShader>& tesc,
-    const std::shared_ptr<TessellationEvaluationShader>& tese
-)
+RenderPipelineBuilder& RenderPipelineBuilder::SetShaders(const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages)
 {
-    if (vert)
-    {
-        if (vert->IsValid()) _shaderStages.push_back(vert->GetCreateInfo());
-        else throw std::invalid_argument("Vertex shader is not valid");
-    }
-
-    if (geom)
-    {
-        if (geom->IsValid()) _shaderStages.push_back(geom->GetCreateInfo());
-        else throw std::invalid_argument("Geometry shader is not valid");
-    }
-
-    if (frag)
-    {
-        if (frag->IsValid()) _shaderStages.push_back(frag->GetCreateInfo());
-        else throw std::invalid_argument("Fragment shader is not valid");
-    }
-
-    if (tesc)
-    {
-        if (tesc->IsValid()) _shaderStages.push_back(tesc->GetCreateInfo());
-        else throw std::invalid_argument("Tessellation control shader is not valid");
-    }
-
-    if (tese && tese->IsValid())
-    {
-        if (tese->IsValid()) _shaderStages.push_back(tese->GetCreateInfo());
-        else throw std::invalid_argument("Tessellation evaluation shader is not valid");
-    }
-
-    *this;
+    _shaderStages = shaderStages;
+    return *this;
 }
 
 RenderPipelineBuilder& RenderPipelineBuilder::SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput)
@@ -207,12 +172,6 @@ void RenderPipelineBuilder::Clear()
 // Protected Fields
 
 // Protected Methods
-
-void RenderPipelineBuilder::ValidateState()
-{
-    if (_shaderStages.empty()) 
-        throw std::runtime_error("No shaders added");
-}
 
 VkPipeline RenderPipelineBuilder::CreatePipeline()
 {

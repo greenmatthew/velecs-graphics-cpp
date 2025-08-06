@@ -65,8 +65,10 @@ const bool RenderEngine::ENABLE_VALIDATION_LAYERS
 
 // Public Methods
 
-SDL_AppResult RenderEngine::Init()
+SDL_AppResult RenderEngine::Init(SDL_Window* const window)
 {
+    _window = window;
+
     if (!InitVulkan()        ) return SDL_APP_FAILURE;
     if (!InitSwapchain()     ) return SDL_APP_FAILURE;
     if (!InitCommands()      ) return SDL_APP_FAILURE;
@@ -268,6 +270,8 @@ void RenderEngine::Cleanup()
 
     // Make sure the GPU has stopped doing its things
     vkDeviceWaitIdle(_device);
+
+    _rasterPrograms2.Clear();
 
     for (size_t i{0}; i < FRAME_OVERLAP; ++i)
     {
@@ -652,30 +656,30 @@ bool RenderEngine::InitPipelines()
 {
     if (!InitBackgroundPipeline()) return false;
 
-    VkPipelineLayout layout = RenderPipelineLayoutBuilder{}
-        .SetDevice(_device)
-        .GetLayout()
-        ;
+    // VkPipelineLayout layout = RenderPipelineLayoutBuilder{}
+    //     .SetDevice(_device)
+    //     .GetLayout()
+    //     ;
 
-    auto pipelineBuilder = RenderPipelineBuilder{};
-    pipelineBuilder.SetDevice(_device)
-        .SetPipelineLayout(layout)
-        .SetTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-        .SetPolygonMode(VK_POLYGON_MODE_FILL)
-        .SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-        .SetMultisamplingNone()
-        .DisableBlending()
-        .DisableDepthTest()
-        .SetColorAttachmentFormat(_drawImage.imageFormat)
-        .SetDepthFormat(VK_FORMAT_UNDEFINED)
-        ;
+    // auto pipelineBuilder = RenderPipelineBuilder{};
+    // pipelineBuilder.SetDevice(_device)
+    //     .SetPipelineLayout(layout)
+    //     .SetTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+    //     .SetPolygonMode(VK_POLYGON_MODE_FILL)
+    //     .SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+    //     .SetMultisamplingNone()
+    //     .DisableBlending()
+    //     .DisableDepthTest()
+    //     .SetColorAttachmentFormat(_drawImage.imageFormat)
+    //     .SetDepthFormat(VK_FORMAT_UNDEFINED)
+    //     ;
 
-    auto program = std::make_unique<RasterizationShaderProgram>();
-    program->SetVertexShader(VertexShader::FromFile(_device, "internal/shaders/simple_triangle_test.vert.spv"));
-    program->SetFragmentShader(FragmentShader::FromFile(_device, "internal/shaders/simple_triangle_test.frag.spv"));
-    program->Init(_device, layout, pipelineBuilder);
+    // auto program = std::make_unique<RasterizationShaderProgram>();
+    // program->SetVertexShader(VertexShader::FromFile("internal/shaders/simple_triangle_test.vert.spv"));
+    // program->SetFragmentShader(FragmentShader::FromFile("internal/shaders/simple_triangle_test.frag.spv"));
+    // program->Init(_device);
 
-    _rasterPrograms.push_back(std::move(program));
+    // _rasterPrograms.push_back(std::move(program));
 
 
 
@@ -879,9 +883,9 @@ bool RenderEngine::InitPipelines()
 
     // Material::Create(ecs(), "SimpleMesh/Rainbow", &_rainbowSimpleMeshPipeline, &simpleMeshPipelineLayout);
 
-    _mainDeletionQueue.PushDeleter([&](){
-        _rasterPrograms.clear();
-    });
+    // _mainDeletionQueue.PushDeleter([&](){
+    //     _rasterPrograms.clear();
+    // });
 
     return true;
 }
@@ -894,7 +898,6 @@ bool RenderEngine::InitImgui()
     ImGuiIO& io = ImGui::GetIO();
 
     static auto iniFilePath = (Paths::PersistentDataDir() / "imgui.ini").string();
-    std::cout << "Dear ImGui .ini file path: " << iniFilePath << std::endl;
     io.IniFilename = iniFilePath.c_str();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -1012,19 +1015,19 @@ void RenderEngine::CleanupSwapchain()
 bool RenderEngine::InitBackgroundPipeline()
 {
     auto gradientProgram = std::make_unique<ComputeShaderProgram>();
-    gradientProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/gradient_color.comp.spv"));
+    gradientProgram->SetComputeShader(ComputeShader::FromFile("internal/shaders/gradient_color.comp.spv"));
     gradientProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
     gradientProgram->ConfigurePushConstants<ComputePushConstants>();
     gradientProgram->Init(_device);
 
     auto skyProgram = std::make_unique<ComputeShaderProgram>();
-    skyProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/sky.comp.spv"));
+    skyProgram->SetComputeShader(ComputeShader::FromFile("internal/shaders/sky.comp.spv"));
     skyProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
     skyProgram->ConfigurePushConstants<ComputePushConstants>();
     skyProgram->Init(_device);
 
     auto fourColorGradientProgram = std::make_unique<ComputeShaderProgram>();
-    fourColorGradientProgram->SetComputeShader(ComputeShader::FromFile(_device, "internal/shaders/4_color_gradient.comp.spv"));
+    fourColorGradientProgram->SetComputeShader(ComputeShader::FromFile("internal/shaders/4_color_gradient.comp.spv"));
     fourColorGradientProgram->SetDescriptor(_drawImageDescriptorLayout, _drawImageDescriptors);
     fourColorGradientProgram->ConfigurePushConstants<ComputePushConstants>();
     fourColorGradientProgram->Init(_device);
@@ -1142,18 +1145,21 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
 
 void RenderEngine::DrawGeometry(const VkCommandBuffer cmd)
 {
-    // Begin a render pass connected to our draw image
-    
-    VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
-        _drawImage.imageView,
-        nullptr,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+    RasterizationShaderProgram* program{nullptr};
+    if (_rasterPrograms2.TryGetRef("Custom/Test1", program))
+    {
+        // Begin a render pass connected to our draw image
+        VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
+            _drawImage.imageView,
+            nullptr,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
 
-    VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
-    vkCmdBeginRendering(cmd, &renderInfo);
+        VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
+        vkCmdBeginRendering(cmd, &renderInfo);
 
-    _rasterPrograms[0]->Draw(cmd, _drawExtent);
+        program->Draw(cmd, _drawExtent);
+    }
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)

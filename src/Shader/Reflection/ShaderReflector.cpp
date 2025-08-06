@@ -169,8 +169,6 @@ ShaderReflectionData ParseSpirV(const std::vector<uint32_t>& spirvCode, VkShader
 // Public interface implementation
 ShaderReflectionData Reflect(const Shader& shader)
 {
-    if (!shader.IsValid()) throw std::runtime_error("Cannot reflect invalid shader");
-
     const auto& spirvCode = shader.GetSpirVCode();
     return ParseSpirV(spirvCode, shader.GetStage());
 }

@@ -67,15 +67,32 @@ void RasterizationShaderProgram::SetTessellationEvaluationShader(const std::shar
     _tese = tese;
 }
 
-void RasterizationShaderProgram::Init(const VkDevice device, const VkPipelineLayout pipelineLayout, RenderPipelineBuilder& pipelineBuilder)
+void RasterizationShaderProgram::Init(const VkDevice device, const VkFormat colorAttachmentFormat)
 {
+    if (_initialized) throw std::runtime_error("Cannot call Init() more than once");
+    if (device == VK_NULL_HANDLE) throw std::runtime_error("Invalid device handle");
+    if (!IsComplete()) throw std::runtime_error("Either no shaders were assigned or there is an invalid combination of shaders");
+
     _device = device;
 
-    _pipelineLayout = pipelineLayout;
+    InitPipelineLayout();
 
-    pipelineBuilder.SetShaders(_vert, _geom, _frag, _tesc, _tese);
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    if (_vert) shaderStages.push_back(_vert->GetCreateInfo(_device));
+    if (_frag) shaderStages.push_back(_frag->GetCreateInfo(_device));
+    if (_geom) shaderStages.push_back(_geom->GetCreateInfo(_device));
+    if (_tesc) shaderStages.push_back(_tesc->GetCreateInfo(_device));
+    if (_tese) shaderStages.push_back(_tese->GetCreateInfo(_device));
 
-    _pipeline = pipelineBuilder.GetPipeline();
+    pipelineBuilder.SetDevice(_device)
+        .SetPipelineLayout(_pipelineLayout)
+        .SetShaders(shaderStages)
+        .SetColorAttachmentFormat(colorAttachmentFormat)
+        ;
+
+    InitPipeline();
+
+    _initialized = true;
 }
 
 void RasterizationShaderProgram::Draw(const VkCommandBuffer cmd, const VkExtent2D extent)
@@ -148,6 +165,31 @@ ShaderReflectionData RasterizationShaderProgram::GetReflectionData()
 
 // Private Methods
 
+void RasterizationShaderProgram::InitPipelineLayout()
+{
+    VkPipelineLayoutCreateInfo graphicsLayout{};
+    graphicsLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    graphicsLayout.pNext = VK_NULL_HANDLE;
+    graphicsLayout.flags = 0;
+
+    if (_pushConstant.has_value())
+    {
+        graphicsLayout.pPushConstantRanges = &_pushConstant->GetRange();
+        graphicsLayout.pushConstantRangeCount = 1;
+    }
+
+    VkResult result = vkCreatePipelineLayout(_device, &graphicsLayout, nullptr, &_pipelineLayout);
+    if (result != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create pipeline layout: " + std::to_string(result));
+    }
+}
+
+void RasterizationShaderProgram::InitPipeline()
+{
+    _pipeline = pipelineBuilder.GetPipeline();
+}
+
 void RasterizationShaderProgram::Cleanup()
 {
     if (_vert) _vert.reset();
@@ -156,11 +198,11 @@ void RasterizationShaderProgram::Cleanup()
     if (_tesc) _tesc.reset();
     if (_tese) _tese.reset();
 
-    if (_device)
+    if (_device != VK_NULL_HANDLE)
     {
-        if (_pipelineLayout)
+        if (_pipelineLayout != VK_NULL_HANDLE)
             vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
-        if (_pipeline)
+        if (_pipeline != VK_NULL_HANDLE)
             vkDestroyPipeline(_device, _pipeline, nullptr);
     }
 }

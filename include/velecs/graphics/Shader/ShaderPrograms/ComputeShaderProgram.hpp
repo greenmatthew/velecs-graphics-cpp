@@ -85,6 +85,7 @@ protected:
     VkShaderStageFlags GetShaderStages() override;
     ShaderReflectionData GetReflectionData() override;
 
+    void InitShaders();
     void InitPipelineLayout();
     void InitPipeline();
 

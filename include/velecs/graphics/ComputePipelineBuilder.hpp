@@ -44,12 +44,6 @@ protected:
 
     // Protected Methods
 
-    /// @brief Validates that all required pipeline state has been configured.
-    /// @throws std::runtime_error if any required state is missing or invalid
-    /// @details Called before pipeline creation to ensure all necessary
-    ///          parameters have been set. Override to add type-specific validation.
-    virtual void ValidateState() override;
-
     /// @brief Creates the actual Vulkan pipeline using the configured state.
     /// @return Handle to the created Vulkan pipeline
     /// @throws std::runtime_error if pipeline creation fails

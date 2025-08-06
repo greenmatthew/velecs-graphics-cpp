@@ -53,13 +53,7 @@ public:
 
     // Public Methods
 
-    RenderPipelineBuilder& SetShaders(
-        const std::shared_ptr<VertexShader>& vert,
-        const std::shared_ptr<GeometryShader>& geom,
-        const std::shared_ptr<FragmentShader>& frag,
-        const std::shared_ptr<TessellationControlShader>& tesc,
-        const std::shared_ptr<TessellationEvaluationShader>& tese
-    );
+    RenderPipelineBuilder& SetShaders(const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages);
 
     /// @brief Sets vertex input description
     RenderPipelineBuilder& SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput);
@@ -96,9 +90,6 @@ protected:
     // Protected Fields
 
     // Protected Methods
-
-    /// @brief Validates that all required state is set
-    virtual void ValidateState() override;
 
     /// @brief 
     /// @return

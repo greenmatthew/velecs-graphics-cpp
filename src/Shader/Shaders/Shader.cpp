@@ -21,15 +21,13 @@ namespace velecs::graphics {
 // Constructors and Destructors
 
 Shader::Shader(Shader&& other) noexcept
-    : _device(other._device),
-        _stage(other._stage),
+    : _stage(other._stage),
         _relPath(std::move(other._relPath)),
         _entryPoint(std::move(other._entryPoint)),
         _spirvCode(std::move(other._spirvCode)),
         _module(other._module),
         _stageCreateInfo(other._stageCreateInfo)
 {
-    other._device = VK_NULL_HANDLE;
     other._module = VK_NULL_HANDLE;
     other._stageCreateInfo = {};
 }
@@ -40,7 +38,6 @@ Shader& Shader::operator=(Shader&& other) noexcept
     {
         Cleanup();
 
-        _device = other._device;
         _stage = other._stage;
         _relPath = std::move(other._relPath);
         _entryPoint = std::move(other._entryPoint);
@@ -48,7 +45,6 @@ Shader& Shader::operator=(Shader&& other) noexcept
         _module = other._module;
         _stageCreateInfo = other._stageCreateInfo;
 
-        other._device = VK_NULL_HANDLE;
         other._module = VK_NULL_HANDLE;
         other._stageCreateInfo = {};
     }
@@ -56,6 +52,15 @@ Shader& Shader::operator=(Shader&& other) noexcept
 }
 
 // Public Methods
+
+VkPipelineShaderStageCreateInfo Shader::GetCreateInfo(const VkDevice device)
+{
+    _device = device;
+    _module = CreateModuleFromCode(_spirvCode);
+    _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module, _entryPoint);
+
+    return _stageCreateInfo;
+}
 
 Shader& Shader::Reload()
 {
@@ -89,9 +94,6 @@ void Shader::BuildFromCode()
     {
         throw std::runtime_error("Cannot build shader from code: no SPIR-V code provided");
     }
-
-    _module = CreateModuleFromCode(_spirvCode);
-    _stageCreateInfo = VkExtPipelineShaderStageCreateInfo(_stage, _module, _entryPoint);
 }
 
 void Shader::BuildFromFile()

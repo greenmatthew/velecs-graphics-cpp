@@ -32,17 +32,15 @@ public:
     };
 
     /// @brief Constructor for creating a shader from file (use factory methods instead)
-    /// @param device The Vulkan device handle
     /// @param entryPoint The entry point function name
     /// @param relPath Path to the SPIR-V file relative to assets directory (empty for code-based)
     /// @param spirvCode The compiled SPIR-V bytecode (empty for file-based)
     inline VertexShader(
-        VkDevice device,
         const std::string& entryPoint,
         const std::filesystem::path& relPath,
         const std::vector<uint32_t>& spirvCode,
         ConstructorKey
-    ) : Shader(device, VK_SHADER_STAGE_VERTEX_BIT, entryPoint, relPath, spirvCode) {}
+    ) : Shader(VK_SHADER_STAGE_VERTEX_BIT, entryPoint, relPath, spirvCode) {}
 
     /// @brief Default constructor.
     VertexShader() = delete;
@@ -51,24 +49,20 @@ public:
     virtual ~VertexShader() = default;
 
     /// @brief Creates a vertex shader from SPIR-V bytecode
-    /// @param device The Vulkan device handle
     /// @param spirvCode The compiled SPIR-V bytecode
     /// @param entryPoint The entry point function name (default: "main")
     /// @return Shared pointer to the created vertex shader
     static std::shared_ptr<VertexShader> FromCode(
-        VkDevice device,
         const std::vector<uint32_t>& spirvCode,
         const std::string& entryPoint = "main"
     );
 
     /// @brief Creates a vertex shader from a SPIR-V file in the assets directory
-    /// @param device The Vulkan device handle
     /// @param relPath Path to the SPIR-V file relative to the assets directory (e.g., "shaders/vertex.spv")
     /// @param entryPoint The entry point function name (default: "main")
     /// @return Shared pointer to the created vertex shader
     /// @note The file path is resolved relative to Paths::AssetsDir()
     static std::shared_ptr<VertexShader> FromFile(
-        VkDevice device,
         const std::filesystem::path& relPath,
         const std::string& entryPoint = "main"
     );

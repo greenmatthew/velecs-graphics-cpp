@@ -70,7 +70,6 @@ public:
     ///          The pipeline must be manually destroyed when no longer needed.
     VkPipeline GetPipeline()
     {
-        ValidateStateRoot();
         return CreatePipeline();
     }
 
@@ -81,13 +80,6 @@ protected:
     VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE}; /// @brief Pipeline layout describing resource bindings and push constants
 
     // Protected Methods
-
-    /// @brief Validates derived class-specific pipeline state.
-    /// @throws std::runtime_error if any required state is missing or invalid
-    /// @details Called by ValidateStateRoot() after base class validation passes.
-    ///          Override to add type-specific validation logic for derived classes.
-    ///          Base class state (device, pipeline layout) is already validated.
-    virtual void ValidateState() = 0;
 
     /// @brief Creates the actual Vulkan pipeline using the configured state.
     /// @return Handle to the created Vulkan pipeline
@@ -102,21 +94,6 @@ private:
     // Private Methods
 
     Derived& derived() { return static_cast<Derived&>(*this); }
-
-    /// @brief Validates base class state and calls derived class validation.
-    /// @throws std::runtime_error if base class or derived class validation fails
-    /// @details Ensures device and pipeline layout are set, then calls ValidateState()
-    ///          for derived class-specific validation. This two-phase validation
-    ///          ensures consistent validation order across all pipeline types.
-    void ValidateStateRoot()
-    {
-        if (_device == VK_NULL_HANDLE) 
-            throw std::runtime_error("Device not set");
-        if (_pipelineLayout == VK_NULL_HANDLE) 
-            throw std::runtime_error("Pipeline layout not set");
-
-        ValidateState();
-    }
 };
 
 // Required implementation for pure virtual destructor

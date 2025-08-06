@@ -50,11 +50,15 @@ void ComputeShaderProgram::SetGroupCount(const uint32_t x, const uint32_t y/* = 
 
 void ComputeShaderProgram::Init(const VkDevice device)
 {
-    assert(device != VK_NULL_HANDLE && "Device needs to be valid");
+    if (_initialized) throw std::runtime_error("Cannot call Init() more than once");
+    if (device == VK_NULL_HANDLE) throw std::runtime_error("Invalid device handle");
+    if (!IsComplete()) throw std::runtime_error("No compute shader was assigned");
 
     _device = device;
+
     InitPipelineLayout();
     InitPipeline();
+
     _initialized = true;
 }
 
@@ -134,7 +138,8 @@ void ComputeShaderProgram::InitPipeline()
         .SetDevice(_device)
         .SetPipelineLayout(_pipelineLayout)
         .SetComputeShader(_comp)
-        .GetPipeline();
+        .GetPipeline()
+        ;
 }
 
 // Private Fields

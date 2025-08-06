@@ -11,11 +11,14 @@
 #pragma once
 
 #include "velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp"
+
 #include "velecs/graphics/Shader/Shaders/VertexShader.hpp"
 #include "velecs/graphics/Shader/Shaders/GeometryShader.hpp"
 #include "velecs/graphics/Shader/Shaders/FragmentShader.hpp"
 #include "velecs/graphics/Shader/Shaders/TessellationControlShader.hpp"
 #include "velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp"
+
+#include "velecs/graphics/RenderPipelineLayoutBuilder.hpp"
 #include "velecs/graphics/RenderPipelineBuilder.hpp"
 
 #include <vulkan/vulkan_core.h>
@@ -61,12 +64,14 @@ public:
     void SetTessellationControlShader(const std::shared_ptr<TessellationControlShader>& tesc);
     void SetTessellationEvaluationShader(const std::shared_ptr<TessellationEvaluationShader>& tese);
 
-    void Init(const VkDevice device, const VkPipelineLayout pipelineLayout, RenderPipelineBuilder& pipelineBuilder);
+    void Init(const VkDevice device, const VkFormat colorAttachmentFormat);
     
     void Draw(const VkCommandBuffer cmd, const VkExtent2D extent);
 
 protected:
     // Protected Fields
+
+    RenderPipelineBuilder pipelineBuilder;
 
     // Protected Methods
 
@@ -89,11 +94,11 @@ private:
     std::shared_ptr<TessellationControlShader>    _tesc{nullptr}; /// @brief Tessellation control shader (optional - must pair with tese)
     std::shared_ptr<TessellationEvaluationShader> _tese{nullptr}; /// @brief Tessellation evaluation shader (optional - must pair with tesc)
 
-    VkPipeline _pipeline{VK_NULL_HANDLE};
-
-    VkDevice _device{VK_NULL_HANDLE};
-
     // Private Methods
+
+    void InitShaders();
+    void InitPipelineLayout();
+    void InitPipeline();
 
     void Cleanup();
 };
