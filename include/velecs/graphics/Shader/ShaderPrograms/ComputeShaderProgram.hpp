@@ -52,20 +52,6 @@ public:
 
     void SetDescriptor(const VkDescriptorSetLayout descriptorSetLayout, const VkDescriptorSet descriptorSet);
 
-    /// @brief Configures push constants for this compute program (call before Init())
-    template<typename PushConstantType>
-    void ConfigurePushConstants()
-    {
-        if (_initialized)
-            throw std::runtime_error("Cannot configure push constants after Init() has been called");
-        
-        if (_comp == nullptr)
-            throw std::runtime_error("Cannot configure push constants without a compute shader assigned");
-
-        ShaderReflectionData reflectionData = Reflect(*_comp.get());
-        _pushConstant = PushConstant::Create<PushConstantType>(VK_SHADER_STAGE_COMPUTE_BIT, reflectionData);
-    }
-
     void Init(const VkDevice device);
 
     void SetGroupCount(const uint32_t x, const uint32_t y = 1, const uint32_t z = 1);
@@ -85,7 +71,6 @@ protected:
     VkShaderStageFlags GetShaderStages() override;
     ShaderReflectionData GetReflectionData() override;
 
-    void InitShaders();
     void InitPipelineLayout();
     void InitPipeline();
 
