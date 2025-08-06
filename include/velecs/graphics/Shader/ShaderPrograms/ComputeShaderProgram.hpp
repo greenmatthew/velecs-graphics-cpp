@@ -12,9 +12,6 @@
 
 #include "velecs/graphics/Shader/ShaderPrograms/ShaderProgramBase.hpp"
 #include "velecs/graphics/Shader/Shaders/ComputeShader.hpp"
-#include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
-#include "velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp"
-#include "velecs/graphics/Shader/PushConstant.hpp"
 #include "velecs/graphics/ComputePipelineBuilder.hpp"
 
 #include <memory>
@@ -71,43 +68,6 @@ public:
 
     void Init(const VkDevice device);
 
-    template<typename PushConstantType>
-    PushConstantType& GetPushConstant()
-    {
-        if (!_initialized)
-            throw std::runtime_error("Must call Init() before updating push constants");
-
-        if (!_pushConstant)
-            throw std::runtime_error("There is no push constant configured to update");
-        
-        return _pushConstant->GetData<PushConstantType>();
-    }
-
-    template<typename PushConstantType>
-    const PushConstantType& GetPushConstant() const
-    {
-        if (!_initialized)
-            throw std::runtime_error("Must call Init() before updating push constants");
-
-        if (!_pushConstant)
-            throw std::runtime_error("There is no push constant configured to update");
-        
-        return _pushConstant->GetData<PushConstantType>();
-    }
-
-    /// @brief Updates push constant data (fast runtime call)
-    template<typename PushConstantType>
-    void UpdatePushConstant(const PushConstantType& data)
-    {
-        if (!_initialized)
-            throw std::runtime_error("Must call Init() before updating push constants");
-
-        if (!_pushConstant)
-            throw std::runtime_error("There is no push constant configured to update");
-        
-        _pushConstant->UpdateData(data);
-    }
-
     void SetGroupCount(const uint32_t x, const uint32_t y = 1, const uint32_t z = 1);
 
     void Dispatch(const VkCommandBuffer cmd);
@@ -122,29 +82,23 @@ protected:
     /// @return True if all assigned shaders are valid and ready for use
     bool ValidateShaders() const override;
 
+    VkShaderStageFlags GetShaderStages() override;
+    ShaderReflectionData GetReflectionData() override;
+
     void InitPipelineLayout();
     void InitPipeline();
 
 private:
     // Private Fields
 
-    bool _initialized{false};
-
-    VkDevice _device{VK_NULL_HANDLE};
-
     std::shared_ptr<ComputeShader> _comp;
 
     VkDescriptorSetLayout _descriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet _descriptorSet{VK_NULL_HANDLE};
 
-    std::optional<PushConstant> _pushConstant;
-
     std::optional<uint32_t> _numGroupsX{std::nullopt};
     std::optional<uint32_t> _numGroupsY{std::nullopt};
     std::optional<uint32_t> _numGroupsZ{std::nullopt};
-
-    VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
-    VkPipeline _pipeline{VK_NULL_HANDLE};
 
     // Private Methods
 

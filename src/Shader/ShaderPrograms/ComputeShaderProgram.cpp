@@ -10,6 +10,8 @@
 
 #include "velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp"
 
+#include "velecs/graphics/Shader/Reflection/ShaderReflector.hpp"
+
 namespace velecs::graphics {
 
 // Public Fields
@@ -93,6 +95,16 @@ void ComputeShaderProgram::Dispatch(const VkCommandBuffer cmd)
 bool ComputeShaderProgram::ValidateShaders() const
 {
     return _comp && _comp->IsValid();
+}
+
+VkShaderStageFlags ComputeShaderProgram::GetShaderStages()
+{
+    return VK_SHADER_STAGE_COMPUTE_BIT;
+}
+
+ShaderReflectionData ComputeShaderProgram::GetReflectionData()
+{
+    return Reflect(*_comp.get());
 }
 
 void ComputeShaderProgram::InitPipelineLayout()

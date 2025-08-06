@@ -84,8 +84,6 @@ VkRenderingInfo VkExtRenderingInfo(
 
 
 
-VkPipelineVertexInputStateCreateInfo VkExtVertexInputStateCreateInfo();
-
 VkPipelineInputAssemblyStateCreateInfo VkExtInputAssemblyCreateInfo(VkPrimitiveTopology topology);
 
 VkPipelineRasterizationStateCreateInfo VkExtRasterizationStateCreateInfo(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);

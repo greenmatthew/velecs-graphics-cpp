@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <vector>
+#include <optional>
 
 namespace velecs::graphics {
 
@@ -37,7 +38,7 @@ public:
     // Constructors and Destructors
 
     /// @brief Default constructor.
-    RenderPipelineBuilder() = default;
+    RenderPipelineBuilder() { Clear(); }
 
     /// @brief Default deconstructor.
     ~RenderPipelineBuilder() = default;
@@ -52,56 +53,13 @@ public:
 
     // Public Methods
 
-    /// @brief Adds a shader stage to the pipeline.
-    /// @param shader Shared pointer to a compiled and valid shader
-    /// @return Reference to this builder for method chaining
-    /// @details The shader must be compiled and valid before adding. Invalid shaders
-    ///          will be caught during validation. Duplicate shader stages may be
-    ///          rejected depending on the pipeline type.
-    RenderPipelineBuilder& AddShader(const std::shared_ptr<VertexShader>& shader);
-
-    /// @brief Adds a shader stage to the pipeline.
-    /// @param shader Shared pointer to a compiled and valid shader
-    /// @return Reference to this builder for method chaining
-    /// @details The shader must be compiled and valid before adding. Invalid shaders
-    ///          will be caught during validation. Duplicate shader stages may be
-    ///          rejected depending on the pipeline type.
-    RenderPipelineBuilder& AddShader(const std::shared_ptr<GeometryShader>& shader);
-
-    /// @brief Adds a shader stage to the pipeline.
-    /// @param shader Shared pointer to a compiled and valid shader
-    /// @return Reference to this builder for method chaining
-    /// @details The shader must be compiled and valid before adding. Invalid shaders
-    ///          will be caught during validation. Duplicate shader stages may be
-    ///          rejected depending on the pipeline type.
-    RenderPipelineBuilder& AddShader(const std::shared_ptr<FragmentShader>& shader);
-
-    /// @brief Adds a shader stage to the pipeline.
-    /// @param shader Shared pointer to a compiled and valid shader
-    /// @return Reference to this builder for method chaining
-    /// @details The shader must be compiled and valid before adding. Invalid shaders
-    ///          will be caught during validation. Duplicate shader stages may be
-    ///          rejected depending on the pipeline type.
-    RenderPipelineBuilder& AddShader(const std::shared_ptr<TessellationControlShader>& shader);
-
-    /// @brief Adds a shader stage to the pipeline.
-    /// @param shader Shared pointer to a compiled and valid shader
-    /// @return Reference to this builder for method chaining
-    /// @details The shader must be compiled and valid before adding. Invalid shaders
-    ///          will be caught during validation. Duplicate shader stages may be
-    ///          rejected depending on the pipeline type.
-    RenderPipelineBuilder& AddShader(const std::shared_ptr<TessellationEvaluationShader>& shader);
-
-    RenderPipelineBuilder& SetRenderPass(const VkRenderPass renderPass);
-
-    /// @brief Sets viewport and scissor from window extent (most common case)
-    RenderPipelineBuilder& SetViewport(const VkExtent2D extent);
-
-    /// @brief Custom viewport (for advanced cases)
-    RenderPipelineBuilder& SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f);
-
-    /// @brief Sets scissor rectangle independently of viewport
-    RenderPipelineBuilder& SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
+    RenderPipelineBuilder& SetShaders(
+        const std::shared_ptr<VertexShader>& vert,
+        const std::shared_ptr<GeometryShader>& geom,
+        const std::shared_ptr<FragmentShader>& frag,
+        const std::shared_ptr<TessellationControlShader>& tesc,
+        const std::shared_ptr<TessellationEvaluationShader>& tese
+    );
 
     /// @brief Sets vertex input description
     RenderPipelineBuilder& SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput);
@@ -115,19 +73,27 @@ public:
     /// @brief Sets face culling
     RenderPipelineBuilder& SetCullMode(VkCullModeFlags cullMode, VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-    /// @brief Enables/disables depth testing
-    RenderPipelineBuilder& SetDepthTest(bool enable, bool write = true, VkCompareOp compareOp = VK_COMPARE_OP_LESS);
-
-    /// @brief Enables simple alpha blending (for UI/transparency)
-    RenderPipelineBuilder& EnableAlphaBlending();
+    RenderPipelineBuilder& SetMultisamplingNone();
 
     /// @brief Disables blending (opaque rendering)
     RenderPipelineBuilder& DisableBlending();
 
+    /// @brief Enables simple alpha blending (for UI/transparency)
+    RenderPipelineBuilder& EnableAlphaBlending();
+
+    RenderPipelineBuilder& SetColorAttachmentFormat(const VkFormat format);
+
+    RenderPipelineBuilder& SetDepthFormat(const VkFormat format);
+
+    RenderPipelineBuilder& DisableDepthTest();
+
+    /// @brief Enables/disables depth testing
+    RenderPipelineBuilder& SetDepthTest(bool enable, bool write = true, VkCompareOp compareOp = VK_COMPARE_OP_LESS);
+
+    void Clear();
+
 protected:
     // Protected Fields
-
-    std::vector<std::shared_ptr<Shader>> _shaders;    /// @brief Collection of shaders to be used in the pipeline
 
     // Protected Methods
 
@@ -139,25 +105,26 @@ protected:
     /// /// Note Assumes a valid state and described by `ValidateState()`. 
     virtual VkPipeline CreatePipeline() override;
 
-    /// @brief Converts stored shaders to Vulkan pipeline shader stage create info structures.
-    /// @return Vector of VkPipelineShaderStageCreateInfo for all shaders
-    /// @details Iterates through all added shaders and returns
-    ///          the create info structures needed for Vulkan pipeline creation.
-    std::vector<VkPipelineShaderStageCreateInfo> GetShaderStageCreateInfos();
-
 private:
     // Private Fields
 
-    VkRenderPass _renderPass{VK_NULL_HANDLE};
+    std::vector<VkPipelineShaderStageCreateInfo> _shaderStages; /// @brief Collection of shader stages to be used in the pipeline
 
     VkPipelineVertexInputStateCreateInfo _vertexInputInfo; /// @brief Description of the format of the vertex data.
+    
     VkPipelineInputAssemblyStateCreateInfo _inputAssembly; /// @brief Information about the type of geometry primitives to be processed.
-    VkViewport _viewport; /// @brief The viewport transformation to be applied.
-    VkRect2D _scissor; /// @brief The scissor test to be applied.
+
     VkPipelineRasterizationStateCreateInfo _rasterizer; /// @brief Rasterization state parameters.
-    VkPipelineColorBlendAttachmentState _colorBlendAttachment; /// @brief Color blending settings for the pipeline.
+
     VkPipelineMultisampleStateCreateInfo _multisampling; /// @brief Multisampling state parameters.
+
     VkPipelineDepthStencilStateCreateInfo _depthStencil;
+
+    VkPipelineColorBlendAttachmentState _colorBlendAttachment; /// @brief Color blending settings for the pipeline.
+
+    VkPipelineRenderingCreateInfo _renderInfo;
+
+    VkFormat _colorAttachmentFormat;
 
     // Private Methods
 };

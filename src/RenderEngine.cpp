@@ -178,8 +178,12 @@ void RenderEngine::Draw()
 
     DrawBackground(cmd);
 
+    TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    DrawGeometry(cmd);
+
     // Transition the draw image and the swapchain image to their correct transfer layouts
-    TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     TransitionImage(cmd, _swapchainImages[swapchainImageIndex], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     // Execute a copy from the draw image into the swapchain
@@ -648,9 +652,32 @@ bool RenderEngine::InitPipelines()
 {
     if (!InitBackgroundPipeline()) return false;
 
-    RasterizationShaderProgram program{};
-    program.vert = VertexShader::FromFile(_device, "internal/shaders/basic.vert.spv");
-    program.frag = FragmentShader::FromFile(_device, "internal/shaders/basic.frag.spv");
+    VkPipelineLayout layout = RenderPipelineLayoutBuilder{}
+        .SetDevice(_device)
+        .GetLayout()
+        ;
+
+    auto pipelineBuilder = RenderPipelineBuilder{};
+    pipelineBuilder.SetDevice(_device)
+        .SetPipelineLayout(layout)
+        .SetTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        .SetPolygonMode(VK_POLYGON_MODE_FILL)
+        .SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+        .SetMultisamplingNone()
+        .DisableBlending()
+        .DisableDepthTest()
+        .SetColorAttachmentFormat(_drawImage.imageFormat)
+        .SetDepthFormat(VK_FORMAT_UNDEFINED)
+        ;
+
+    auto program = std::make_unique<RasterizationShaderProgram>();
+    program->SetVertexShader(VertexShader::FromFile(_device, "internal/shaders/simple_triangle_test.vert.spv"));
+    program->SetFragmentShader(FragmentShader::FromFile(_device, "internal/shaders/simple_triangle_test.frag.spv"));
+    program->Init(_device, layout, pipelineBuilder);
+
+    _rasterPrograms.push_back(std::move(program));
+
+
 
     // Material mat{};
     // mat.shaderProgram = program;
@@ -851,6 +878,10 @@ bool RenderEngine::InitPipelines()
     // _rainbowSimpleMeshPipeline = pipelineBuilder.BuildPipeline(_device, _renderPass);
 
     // Material::Create(ecs(), "SimpleMesh/Rainbow", &_rainbowSimpleMeshPipeline, &simpleMeshPipelineLayout);
+
+    _mainDeletionQueue.PushDeleter([&](){
+        _rasterPrograms.clear();
+    });
 
     return true;
 }
@@ -1107,6 +1138,22 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
         static_cast<uint32_t>(std::ceil(_drawExtent.height / 16.0f))
     );
     effect->Dispatch(cmd);
+}
+
+void RenderEngine::DrawGeometry(const VkCommandBuffer cmd)
+{
+    // Begin a render pass connected to our draw image
+    
+    VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
+        _drawImage.imageView,
+        nullptr,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+
+    VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
+    vkCmdBeginRendering(cmd, &renderInfo);
+
+    _rasterPrograms[0]->Draw(cmd, _drawExtent);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)

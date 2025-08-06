@@ -18,110 +18,67 @@ namespace velecs::graphics {
 
 // Public Methods
 
-RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<VertexShader>& shader)
-{
-    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
-    _shaders.push_back(shader);
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<GeometryShader>& shader)
-{
-    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
-    _shaders.push_back(shader);
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<FragmentShader>& shader)
-{
-    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
-    _shaders.push_back(shader);
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<TessellationControlShader>& shader)
-{
-    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
-    _shaders.push_back(shader);
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::AddShader(const std::shared_ptr<TessellationEvaluationShader>& shader)
-{
-    if (!shader->IsValid()) throw std::runtime_error("Shader is not valid");
-    _shaders.push_back(shader);
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::SetRenderPass(const VkRenderPass renderPass)
-{
-    _renderPass = renderPass;
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::SetViewport(VkExtent2D extent)
-{
-    _viewport.x = 0.0f;
-    _viewport.y = 0.0f;
-    _viewport.width = static_cast<float>(extent.width);
-    _viewport.height = static_cast<float>(extent.height);
-    _viewport.minDepth = 0.0f;
-    _viewport.maxDepth = 1.0f;
-
-    _scissor.offset = {0, 0};
-    _scissor.extent = extent;
-    return *this;
-}
-
-RenderPipelineBuilder& RenderPipelineBuilder::SetViewport(
-    float x,
-    float y,
-    float width,
-    float height,
-    float minDepth/* = 0.0f */,
-    float maxDepth/* = 1.0f*/
+RenderPipelineBuilder& RenderPipelineBuilder::SetShaders(
+    const std::shared_ptr<VertexShader>& vert,
+    const std::shared_ptr<GeometryShader>& geom,
+    const std::shared_ptr<FragmentShader>& frag,
+    const std::shared_ptr<TessellationControlShader>& tesc,
+    const std::shared_ptr<TessellationEvaluationShader>& tese
 )
 {
-    _viewport.x = x;
-    _viewport.y = y;
-    _viewport.width = width;
-    _viewport.height = height;
-    _viewport.minDepth = minDepth;
-    _viewport.maxDepth = maxDepth;
-    
-    // Set matching scissor rectangle
-    _scissor.offset.x = static_cast<int32_t>(x);
-    _scissor.offset.y = static_cast<int32_t>(y);
-    _scissor.extent.width = static_cast<uint32_t>(width);
-    _scissor.extent.height = static_cast<uint32_t>(height);
-    
-    return *this;
-}
+    if (vert)
+    {
+        if (vert->IsValid()) _shaderStages.push_back(vert->GetCreateInfo());
+        else throw std::invalid_argument("Vertex shader is not valid");
+    }
 
-RenderPipelineBuilder& RenderPipelineBuilder::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
-{
-    _scissor.offset.x = x;
-    _scissor.offset.y = y;
-    _scissor.extent.width = width;
-    _scissor.extent.height = height;
-    return *this;
+    if (geom)
+    {
+        if (geom->IsValid()) _shaderStages.push_back(geom->GetCreateInfo());
+        else throw std::invalid_argument("Geometry shader is not valid");
+    }
+
+    if (frag)
+    {
+        if (frag->IsValid()) _shaderStages.push_back(frag->GetCreateInfo());
+        else throw std::invalid_argument("Fragment shader is not valid");
+    }
+
+    if (tesc)
+    {
+        if (tesc->IsValid()) _shaderStages.push_back(tesc->GetCreateInfo());
+        else throw std::invalid_argument("Tessellation control shader is not valid");
+    }
+
+    if (tese && tese->IsValid())
+    {
+        if (tese->IsValid()) _shaderStages.push_back(tese->GetCreateInfo());
+        else throw std::invalid_argument("Tessellation evaluation shader is not valid");
+    }
+
+    *this;
 }
 
 RenderPipelineBuilder& RenderPipelineBuilder::SetVertexInput(const VkPipelineVertexInputStateCreateInfo& vertexInput)
 {
     _vertexInputInfo = vertexInput;
+
     return *this;
 }
 
 RenderPipelineBuilder& RenderPipelineBuilder::SetTopology(VkPrimitiveTopology topology)
 {
     _inputAssembly.topology = topology;
+    _inputAssembly.primitiveRestartEnable = VK_FALSE;
+
     return *this;
 }
 
 RenderPipelineBuilder& RenderPipelineBuilder::SetPolygonMode(VkPolygonMode mode)
 {
     _rasterizer.polygonMode = mode;
+    _rasterizer.lineWidth = 1.0f;
+
     return *this;
 }
 
@@ -132,18 +89,21 @@ RenderPipelineBuilder& RenderPipelineBuilder::SetCullMode(
 {
     _rasterizer.cullMode = cullMode;
     _rasterizer.frontFace = frontFace;
+
     return *this;
 }
 
-RenderPipelineBuilder& RenderPipelineBuilder::SetDepthTest(
-    bool enable,
-    bool write/* = true*/,
-    VkCompareOp compareOp/* = VK_COMPARE_OP_LESS*/
-)
+RenderPipelineBuilder& RenderPipelineBuilder::SetMultisamplingNone()
 {
-    _depthStencil.depthTestEnable = enable ? VK_TRUE : VK_FALSE;
-    _depthStencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
-    _depthStencil.depthCompareOp = enable ? compareOp : VK_COMPARE_OP_ALWAYS;
+    _multisampling.sampleShadingEnable = VK_FALSE;
+    // multisampling defaulted to no multisampling (1 sample per pixel)
+    _multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    _multisampling.minSampleShading = 1.0f;
+    _multisampling.pSampleMask = nullptr;
+    // no alpha to coverage either
+    _multisampling.alphaToCoverageEnable = VK_FALSE;
+    _multisampling.alphaToOneEnable = VK_FALSE;
+
     return *this;
 }
 
@@ -161,8 +121,87 @@ RenderPipelineBuilder& RenderPipelineBuilder::EnableAlphaBlending()
 
 RenderPipelineBuilder& RenderPipelineBuilder::DisableBlending()
 {
+    // Default write mask
+    _colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+        VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT |
+        VK_COLOR_COMPONENT_A_BIT
+        ;
+    // No blending
     _colorBlendAttachment.blendEnable = VK_FALSE;
+
     return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::SetColorAttachmentFormat(const VkFormat format)
+{
+    _colorAttachmentFormat = format;
+    // Connect the format to the renderInfo structure
+    _renderInfo.colorAttachmentCount = 1;
+    _renderInfo.pColorAttachmentFormats = &_colorAttachmentFormat;
+
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::SetDepthFormat(const VkFormat format)
+{
+    _renderInfo.depthAttachmentFormat = format;
+
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::DisableDepthTest()
+{
+    _depthStencil.depthTestEnable = VK_FALSE;
+    _depthStencil.depthWriteEnable = VK_FALSE;
+    _depthStencil.depthCompareOp = VK_COMPARE_OP_NEVER;
+    _depthStencil.depthBoundsTestEnable = VK_FALSE;
+    _depthStencil.stencilTestEnable = VK_FALSE;
+    _depthStencil.front = {};
+    _depthStencil.back = {};
+    _depthStencil.minDepthBounds = 0.f;
+    _depthStencil.maxDepthBounds = 1.f;
+
+    return *this;
+}
+
+RenderPipelineBuilder& RenderPipelineBuilder::SetDepthTest(
+    bool enable,
+    bool write/* = true*/,
+    VkCompareOp compareOp/* = VK_COMPARE_OP_LESS*/
+)
+{
+    _depthStencil.depthTestEnable = enable ? VK_TRUE : VK_FALSE;
+    _depthStencil.depthWriteEnable = write ? VK_TRUE : VK_FALSE;
+    _depthStencil.depthCompareOp = enable ? compareOp : VK_COMPARE_OP_ALWAYS;
+    return *this;
+}
+
+void RenderPipelineBuilder::Clear()
+{
+    _shaderStages.clear();
+
+    _vertexInputInfo = {};
+    _vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+    _inputAssembly = {};
+    _inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+
+    _rasterizer = {};
+    _rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+
+    _colorBlendAttachment = {};
+
+    _multisampling = {};
+    _multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+    _pipelineLayout = {};
+
+    _depthStencil = {};
+    _depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+    _renderInfo = {};
+    _renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 }
 
 // Protected Fields
@@ -171,56 +210,26 @@ RenderPipelineBuilder& RenderPipelineBuilder::DisableBlending()
 
 void RenderPipelineBuilder::ValidateState()
 {
-    if (_shaders.empty()) 
+    if (_shaderStages.empty()) 
         throw std::runtime_error("No shaders added");
-
-    if (_renderPass == VK_NULL_HANDLE) throw std::runtime_error("Render pass not set");
-    if (_viewport.width == 0 || _viewport.height == 0) throw std::runtime_error("Viewport not set - call SetViewport()");
 }
 
 VkPipeline RenderPipelineBuilder::CreatePipeline()
 {
-    // Vertex input - empty by default (must be set by user)
-    _vertexInputInfo = VkExtVertexInputStateCreateInfo();
-
-    // Input assembly - triangle list (most common)
-    _inputAssembly = VkExtInputAssemblyCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-    // Rasterization - filled triangles, no culling, counter-clockwise front face
-    _rasterizer = VkExtRasterizationStateCreateInfo(
-        VK_POLYGON_MODE_FILL,           // Fill triangles (not wireframe)
-        VK_CULL_MODE_BACK_BIT,          // Cull back faces (standard for 3D)
-        VK_FRONT_FACE_COUNTER_CLOCKWISE // Standard winding order
-    );
-
-    // Multisampling - disabled (most common for performance)
-    _multisampling = VkExtMultisamplingStateCreateInfo();
-
-    // Color blending - no blending, write all color channels
-    _colorBlendAttachment = VkExtColorBlendAttachmentState();
-    _colorBlendAttachment.blendEnable = VK_FALSE; // Opaque rendering
-    _colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | 
-                                          VK_COLOR_COMPONENT_G_BIT | 
-                                          VK_COLOR_COMPONENT_B_BIT | 
-                                          VK_COLOR_COMPONENT_A_BIT;
-
-    // Depth testing - enabled with less-than comparison
-    _depthStencil = VkExtDepthStencilCreateInfo(
-        true,                    // Enable depth testing
-        true,                    // Enable depth writing  
-        VK_COMPARE_OP_LESS       // Standard depth comparison
-    );
-
-    // Viewport and scissor - will be zero-initialized
-    // These MUST be set by the user since we don't know window size
-    _viewport = {};
-    _scissor = {};
-
-    // Viewport state
+    // Make viewport state from our stored viewport and scissor.
+    // At the moment, we wont support multiple viewports or scissors.
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.pNext = nullptr;
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
+
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &_colorBlendAttachment;
 
     // Dynamic state for viewport and scissor (common practice)
     VkDynamicState dynamicStates[] = {
@@ -233,31 +242,27 @@ VkPipeline RenderPipelineBuilder::CreatePipeline()
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
 
-    // Color blending state
-    VkPipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &_colorBlendAttachment;
-
     // Pipeline create info
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    auto shaderStages = GetShaderStageCreateInfos();
-    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
-    pipelineInfo.pStages = shaderStages.data();
+    pipelineInfo.pNext = &_renderInfo;
+    pipelineInfo.flags = 0;
+    pipelineInfo.stageCount = static_cast<uint32_t>(_shaderStages.size());;
+    pipelineInfo.pStages = _shaderStages.data();
     pipelineInfo.pVertexInputState = &_vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &_inputAssembly;
+    pipelineInfo.pTessellationState = nullptr;
     pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pRasterizationState = &_rasterizer;
     pipelineInfo.pMultisampleState = &_multisampling;
-    pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDepthStencilState = &_depthStencil;
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = _pipelineLayout;
-    pipelineInfo.renderPass = _renderPass;
+    pipelineInfo.renderPass = nullptr;
     pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = nullptr;
+    pipelineInfo.basePipelineIndex = 0;
 
     VkPipeline pipeline;
     VkResult result = vkCreateGraphicsPipelines(_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
@@ -267,16 +272,6 @@ VkPipeline RenderPipelineBuilder::CreatePipeline()
     }
 
     return pipeline;
-}
-
-std::vector<VkPipelineShaderStageCreateInfo> RenderPipelineBuilder::GetShaderStageCreateInfos()
-{
-    std::vector<VkPipelineShaderStageCreateInfo> result;
-    for (auto shader : _shaders)
-    {
-        result.push_back(shader->GetCreateInfo());
-    }
-    return result;
 }
 
 // Private Fields

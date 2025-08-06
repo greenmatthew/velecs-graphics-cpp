@@ -140,6 +140,7 @@ set(LIB_SOURCES
     # Render Pipeline
     src/VulkanInitializers.cpp
     src/RenderPipelineLayoutBuilder.cpp
+    src/RenderPipelineBuilder.cpp
     src/ComputePipelineBuilder.cpp
     src/PipelineBuilder.cpp
     src/VertexBufferParamsBuilder.cpp

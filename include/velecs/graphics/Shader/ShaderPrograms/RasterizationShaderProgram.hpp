@@ -16,6 +16,11 @@
 #include "velecs/graphics/Shader/Shaders/FragmentShader.hpp"
 #include "velecs/graphics/Shader/Shaders/TessellationControlShader.hpp"
 #include "velecs/graphics/Shader/Shaders/TessellationEvaluationShader.hpp"
+#include "velecs/graphics/RenderPipelineBuilder.hpp"
+
+#include <vulkan/vulkan_core.h>
+
+#include <optional>
 
 namespace velecs::graphics {
 
@@ -29,19 +34,13 @@ public:
 
     // Public Fields
 
-    std::shared_ptr<VertexShader> vert{nullptr}; /// @brief Vertex shader (required)
-    std::shared_ptr<FragmentShader> frag{nullptr}; /// @brief Fragment shader (required)
-    std::shared_ptr<GeometryShader> geom{nullptr}; /// @brief Geometry shader (optional)
-    std::shared_ptr<TessellationControlShader> tesc{nullptr}; /// @brief Tessellation control shader (optional - must pair with tese)
-    std::shared_ptr<TessellationEvaluationShader> tese{nullptr}; /// @brief Tessellation evaluation shader (optional - must pair with tesc)
-
     // Constructors and Destructors
 
     /// @brief Default constructor.
     RasterizationShaderProgram() = default;
 
     /// @brief Default deconstructor.
-    ~RasterizationShaderProgram() = default;
+    virtual ~RasterizationShaderProgram() { Cleanup(); }
 
     // Public Methods
 
@@ -56,6 +55,16 @@ public:
     /// @return Number of shader stages that are currently assigned
     size_t GetStageCount() const override;
 
+    void SetVertexShader(const std::shared_ptr<VertexShader>& vert);
+    void SetGeometryShader(const std::shared_ptr<GeometryShader>& geom);
+    void SetFragmentShader(const std::shared_ptr<FragmentShader>& frag);
+    void SetTessellationControlShader(const std::shared_ptr<TessellationControlShader>& tesc);
+    void SetTessellationEvaluationShader(const std::shared_ptr<TessellationEvaluationShader>& tese);
+
+    void Init(const VkDevice device, const VkPipelineLayout pipelineLayout, RenderPipelineBuilder& pipelineBuilder);
+    
+    void Draw(const VkCommandBuffer cmd, const VkExtent2D extent);
+
 protected:
     // Protected Fields
 
@@ -66,10 +75,27 @@ protected:
     /// @return True if all assigned shaders are valid and ready for use
     bool ValidateShaders() const override;
 
+    VkShaderStageFlags GetShaderStages() override;
+    ShaderReflectionData GetReflectionData() override;
+
 private:
     // Private Fields
 
+    bool _initialized{false};
+
+    std::shared_ptr<VertexShader>                 _vert{nullptr}; /// @brief Vertex shader (required)
+    std::shared_ptr<GeometryShader>               _geom{nullptr}; /// @brief Geometry shader (optional)
+    std::shared_ptr<FragmentShader>               _frag{nullptr}; /// @brief Fragment shader (required)
+    std::shared_ptr<TessellationControlShader>    _tesc{nullptr}; /// @brief Tessellation control shader (optional - must pair with tese)
+    std::shared_ptr<TessellationEvaluationShader> _tese{nullptr}; /// @brief Tessellation evaluation shader (optional - must pair with tesc)
+
+    VkPipeline _pipeline{VK_NULL_HANDLE};
+
+    VkDevice _device{VK_NULL_HANDLE};
+
     // Private Methods
+
+    void Cleanup();
 };
 
 } // namespace velecs::graphics

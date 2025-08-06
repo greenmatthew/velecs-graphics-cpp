@@ -19,6 +19,7 @@
 #include "velecs/graphics/Memory/DescriptorAllocator.hpp"
 
 #include "velecs/graphics/Shader/ShaderPrograms/ComputeShaderProgram.hpp"
+#include "velecs/graphics/Shader/ShaderPrograms/RasterizationShaderProgram.hpp"
 #include "velecs/graphics/ComputeEffect.hpp"
 
 #include "velecs/graphics/Mesh.hpp"
@@ -116,6 +117,8 @@ private:
     std::vector<std::unique_ptr<ComputeShaderProgram>> _backgroundEffects;
     int _currentBackgroundEffect{0};
 
+    std::vector<std::unique_ptr<RasterizationShaderProgram>> _rasterPrograms;
+
     // Private Methods
 
     bool InitVulkan();
@@ -152,6 +155,7 @@ private:
     );
 
     void DrawBackground(const VkCommandBuffer cmd);
+    void DrawGeometry(const VkCommandBuffer cmd);
     void DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView);
 
     // These functions should be better handled

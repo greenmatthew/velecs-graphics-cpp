@@ -10,6 +10,13 @@
 
 #pragma once
 
+#include "velecs/graphics/Shader/Reflection/ShaderReflectionData.hpp"
+#include "velecs/graphics/Shader/PushConstant.hpp"
+
+#include <vulkan/vulkan_core.h>
+
+#include <optional>
+
 namespace velecs::graphics {
 
 /// @struct ShaderProgramBase
@@ -53,8 +60,70 @@ public:
     /// @return Count of non-null shader stages
     virtual size_t GetStageCount() const = 0;
 
+    /// @brief Configures push constants for this compute program (call before Init())
+    template<typename PushConstantType>
+    void ConfigurePushConstants()
+    {
+        if (_initialized)
+            throw std::runtime_error("Cannot configure push constants after Init() has been called");
+
+        if (!IsComplete())
+            throw std::runtime_error("Cannot configure push constants without shader(s) assigned");
+
+        _pushConstant = PushConstant::Create<PushConstantType>(
+            GetShaderStages(),
+            GetReflectionData()
+        );
+    }
+
+    template<typename PushConstantType>
+    PushConstantType& GetPushConstant()
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        return _pushConstant->GetData<PushConstantType>();
+    }
+
+    template<typename PushConstantType>
+    const PushConstantType& GetPushConstant() const
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        return _pushConstant->GetData<PushConstantType>();
+    }
+
+    /// @brief Updates push constant data (fast runtime call)
+    template<typename PushConstantType>
+    void UpdatePushConstant(const PushConstantType& data)
+    {
+        if (!_initialized)
+            throw std::runtime_error("Must call Init() before updating push constants");
+
+        if (!_pushConstant)
+            throw std::runtime_error("There is no push constant configured to update");
+        
+        _pushConstant->UpdateData(data);
+    }
+
 protected:
     // Protected Fields
+
+    bool _initialized{false};
+
+    std::optional<PushConstant> _pushConstant;
+
+    VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
+    VkPipeline _pipeline{VK_NULL_HANDLE};
+
+    VkDevice _device{VK_NULL_HANDLE};
 
     // Protected Methods
 
@@ -63,6 +132,9 @@ protected:
     ///          It's called automatically by IsValid() after IsComplete() passes.
     /// @return True if all assigned shaders are valid
     virtual bool ValidateShaders() const = 0;
+
+    virtual VkShaderStageFlags GetShaderStages() = 0;
+    virtual ShaderReflectionData GetReflectionData() = 0;
 
 private:
     // Private Fields

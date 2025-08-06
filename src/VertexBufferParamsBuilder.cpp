@@ -39,15 +39,14 @@ VertexBufferParamsBuilder& VertexBufferParamsBuilder::AddBinding(
 
 const VkPipelineVertexInputStateCreateInfo& VertexBufferParamsBuilder::GetCreateInfo() const
 {
-    if (!_createInfoValid) {
+    if (!_createInfoValid)
+    {
         _createInfo = {};
         _createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         _createInfo.pNext = nullptr;
         _createInfo.flags = 0;
-        
         _createInfo.pVertexBindingDescriptions = _bindings.data();
         _createInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(_bindings.size());
-        
         _createInfo.pVertexAttributeDescriptions = _attributes.data();
         _createInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(_attributes.size());
         
