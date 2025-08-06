@@ -68,7 +68,7 @@ public:
     template<typename RShaderProgram>
     void RegisterRasterizationShaderProgram(const std::string& name)
     {
-        if (!_wasInitialized)
+        if (!_initialized)
             throw std::runtime_error("Cannot register a new rasterization shader program if render engine uninitialized.");
 
         auto [program, uuid] = _rasterPrograms2.EmplaceAs<RShaderProgram>(name);
@@ -89,7 +89,7 @@ protected:
 private:
     // Private Fields
 
-    bool _wasInitialized{false};
+    bool _initialized{false};
 
     SDL_Window* _window{nullptr}; /// @brief Pointer to the SDL window structure.
 

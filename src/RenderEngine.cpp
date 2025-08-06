@@ -77,7 +77,7 @@ SDL_AppResult RenderEngine::Init(SDL_Window* const window)
     if (!InitPipelines()     ) return SDL_APP_FAILURE;
     if (!InitImgui()         ) return SDL_APP_FAILURE;
 
-    _wasInitialized = true;
+    _initialized = true;
 
     return SDL_APP_CONTINUE;
 }
@@ -266,7 +266,7 @@ void RenderEngine::Draw()
 
 void RenderEngine::Cleanup()
 {
-    if (!_wasInitialized) return;
+    if (!_initialized) return;
 
     // Make sure the GPU has stopped doing its things
     vkDeviceWaitIdle(_device);
@@ -302,7 +302,7 @@ void RenderEngine::Cleanup()
     vkb::destroy_debug_utils_messenger(_instance, _debugMessenger);
     vkDestroyInstance(_instance, nullptr);
 
-    _wasInitialized = false;
+    _initialized = false;
 }
 
 // Protected Fields
