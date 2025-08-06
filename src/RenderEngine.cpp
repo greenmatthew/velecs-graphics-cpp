@@ -661,25 +661,23 @@ bool RenderEngine::InitPipelines()
     //     .GetLayout()
     //     ;
 
-    // auto pipelineBuilder = RenderPipelineBuilder{};
-    // pipelineBuilder.SetDevice(_device)
-    //     .SetPipelineLayout(layout)
-    //     .SetTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-    //     .SetPolygonMode(VK_POLYGON_MODE_FILL)
-    //     .SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-    //     .SetMultisamplingNone()
-    //     .DisableBlending()
-    //     .DisableDepthTest()
-    //     .SetColorAttachmentFormat(_drawImage.imageFormat)
-    //     .SetDepthFormat(VK_FORMAT_UNDEFINED)
-    //     ;
+    auto program = std::make_unique<RasterizationShaderProgram>();
+    program->SetVertexShader(VertexShader::FromFile("internal/shaders/simple_triangle_test.vert.spv"));
+    program->SetFragmentShader(FragmentShader::FromFile("internal/shaders/simple_triangle_test.frag.spv"));
+    program->DebugGetBuilder()
+        .SetDevice(_device)
+        // .SetPipelineLayout(layout)
+        .SetTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        .SetPolygonMode(VK_POLYGON_MODE_FILL)
+        .SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+        .SetMultisamplingNone()
+        .DisableBlending()
+        .DisableDepthTest()
+        .SetDepthFormat(VK_FORMAT_UNDEFINED)
+        ;
+    program->Init(_device, _drawImage.imageFormat);
 
-    // auto program = std::make_unique<RasterizationShaderProgram>();
-    // program->SetVertexShader(VertexShader::FromFile("internal/shaders/simple_triangle_test.vert.spv"));
-    // program->SetFragmentShader(FragmentShader::FromFile("internal/shaders/simple_triangle_test.frag.spv"));
-    // program->Init(_device);
-
-    // _rasterPrograms.push_back(std::move(program));
+    _rasterPrograms.push_back(std::move(program));
 
 
 
@@ -883,9 +881,9 @@ bool RenderEngine::InitPipelines()
 
     // Material::Create(ecs(), "SimpleMesh/Rainbow", &_rainbowSimpleMeshPipeline, &simpleMeshPipelineLayout);
 
-    // _mainDeletionQueue.PushDeleter([&](){
-    //     _rasterPrograms.clear();
-    // });
+    _mainDeletionQueue.PushDeleter([&](){
+        _rasterPrograms.clear();
+    });
 
     return true;
 }
@@ -1145,21 +1143,17 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
 
 void RenderEngine::DrawGeometry(const VkCommandBuffer cmd)
 {
-    RasterizationShaderProgram* program{nullptr};
-    if (_rasterPrograms2.TryGetRef("Custom/Test1", program))
-    {
-        // Begin a render pass connected to our draw image
-        VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
-            _drawImage.imageView,
-            nullptr,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
+    // Begin a render pass connected to our draw image
+    VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
+        _drawImage.imageView,
+        nullptr,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
 
-        VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
-        vkCmdBeginRendering(cmd, &renderInfo);
+    VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
+    vkCmdBeginRendering(cmd, &renderInfo);
 
-        program->Draw(cmd, _drawExtent);
-    }
+    _rasterPrograms[0]->Draw(cmd, _drawExtent);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)

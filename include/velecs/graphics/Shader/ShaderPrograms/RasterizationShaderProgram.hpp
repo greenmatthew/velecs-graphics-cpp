@@ -64,6 +64,12 @@ public:
     void SetTessellationControlShader(const std::shared_ptr<TessellationControlShader>& tesc);
     void SetTessellationEvaluationShader(const std::shared_ptr<TessellationEvaluationShader>& tese);
 
+    RenderPipelineBuilder& DebugGetBuilder()
+    {
+        std::cerr << "[WARNING] `DebugGetBuilder()` is function used for testing purposes only and should be removed." << std::endl;
+        return pipelineBuilder;
+    }
+
     void Init(const VkDevice device, const VkFormat colorAttachmentFormat);
     
     void Draw(const VkCommandBuffer cmd, const VkExtent2D extent);
