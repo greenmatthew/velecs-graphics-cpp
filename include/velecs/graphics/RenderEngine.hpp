@@ -24,6 +24,9 @@
 
 #include "velecs/graphics/Mesh.hpp"
 
+#include <velecs/ecs/Scene.hpp>
+using velecs::ecs::Scene;
+
 #include <velecs/common/NameUuidRegistry.hpp>
 using velecs::common::NameUuidRegistry;
 
@@ -78,7 +81,7 @@ public:
     SDL_AppResult Init(SDL_Window* const window);
     void StartGUI();
     void EndGUI();
-    void Draw();
+    void Draw(Scene* const scene);
     void Cleanup();
 
 protected:
@@ -169,7 +172,7 @@ private:
     );
 
     void DrawBackground(const VkCommandBuffer cmd);
-    void DrawGeometry(const VkCommandBuffer cmd);
+    void DrawGeometry(const VkCommandBuffer cmd, Scene* const scene);
     void DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView);
 
     // These functions should be better handled

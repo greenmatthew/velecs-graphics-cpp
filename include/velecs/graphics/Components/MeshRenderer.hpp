@@ -28,7 +28,7 @@ public:
     // Public Fields
 
     std::shared_ptr<Mesh> mesh;
-    // std::shared_ptr<Material> mat;
+    std::shared_ptr<Material> mat;
 
     // Constructors and Destructors
 

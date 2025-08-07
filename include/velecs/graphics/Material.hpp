@@ -10,7 +10,11 @@
 
 #pragma once
 
+#include <velecs/common/Uuid.hpp>
+using velecs::common::Uuid;
+
 #include <memory>
+#include <optional>
 
 namespace velecs::graphics {
 
@@ -38,6 +42,14 @@ public:
     // It should use ShaderReflector to determine what fields are allowed.
     static std::shared_ptr<Material> Create();
 
+    inline bool IsValid() const { return _programHandle.has_value(); }
+
+    void TrySetShaderProgram(const std::string& name)
+    {
+        // const Uuid uuid = RenderEngine::_rasterPrograms2.TryGetUuid(name);
+        // _programHandle = uuid;
+    }
+
 protected:
     // Protected Fields
 
@@ -45,6 +57,8 @@ protected:
 
 private:
     // Private Fields
+
+    std::optional<Uuid> _programHandle;
 
     // Private Methods
 };

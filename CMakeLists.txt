@@ -148,6 +148,7 @@ set(LIB_SOURCES
 
     # Meshes
     src/Mesh.cpp
+    src/Material.cpp
 
     # Cameras
     src/Components/Camera.cpp
@@ -202,10 +203,11 @@ set(LIB_HEADERS
     include/velecs/graphics/DescriptorLayoutBuilder.hpp
 
     # Meshes
-    include/velecs/graphics/Vertex.hpp
+    include/velecs/graphics/Components/MeshRenderer.hpp
     include/velecs/graphics/MeshBase.hpp
     include/velecs/graphics/Mesh.hpp
-    include/velecs/graphics/Components/MeshRenderer.hpp
+    include/velecs/graphics/Vertex.hpp
+    include/velecs/graphics/Material.hpp
     include/velecs/graphics/ObjectUniforms.hpp
 
     # Cameras

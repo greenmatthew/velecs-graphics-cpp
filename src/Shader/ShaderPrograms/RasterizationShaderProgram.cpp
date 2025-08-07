@@ -120,8 +120,6 @@ void RasterizationShaderProgram::Draw(const VkCommandBuffer cmd, const VkExtent2
 
     //launch a draw command to draw 3 vertices
     vkCmdDraw(cmd, 3, 1, 0, 0);
-
-    vkCmdEndRendering(cmd);
 }
 
 // Protected Fields

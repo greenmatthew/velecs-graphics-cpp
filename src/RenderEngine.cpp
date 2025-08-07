@@ -113,7 +113,7 @@ void RenderEngine::EndGUI()
     ImGui::Render();
 }
 
-void RenderEngine::Draw()
+void RenderEngine::Draw(Scene* const scene)
 {
     // Wait until the GPU has finished rendering the last frame. Timeout of 1 second
     VkResult result = vkWaitForFences(_device, 1, &(GetCurrentFrame().renderFence), true, 1000000000);
@@ -182,7 +182,7 @@ void RenderEngine::Draw()
 
     TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-    DrawGeometry(cmd);
+    DrawGeometry(cmd, scene);
 
     // Transition the draw image and the swapchain image to their correct transfer layouts
     TransitionImage(cmd, _drawImage.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -1141,7 +1141,7 @@ void RenderEngine::DrawBackground(const VkCommandBuffer cmd)
     effect->Dispatch(cmd);
 }
 
-void RenderEngine::DrawGeometry(const VkCommandBuffer cmd)
+void RenderEngine::DrawGeometry(const VkCommandBuffer cmd, Scene* const scene)
 {
     // Begin a render pass connected to our draw image
     VkRenderingAttachmentInfo colorAttachment = VkExtRenderingAttachmentInfo(
@@ -1153,7 +1153,16 @@ void RenderEngine::DrawGeometry(const VkCommandBuffer cmd)
     VkRenderingInfo renderInfo = VkExtRenderingInfo(_drawExtent, &colorAttachment, nullptr);
     vkCmdBeginRendering(cmd, &renderInfo);
 
-    _rasterPrograms[0]->Draw(cmd, _drawExtent);
+    scene->Query<MeshRenderer, Transform>([](auto entity, auto& renderer, auto& transform){
+        if (renderer.mesh && renderer.mat)
+        {
+            std::cout << entity.GetName() << std::endl;
+        }
+    });
+
+    // _rasterPrograms[0]->Draw(cmd, _drawExtent);
+
+    vkCmdEndRendering(cmd);
 }
 
 void RenderEngine::DrawImgui(const VkCommandBuffer cmd, const VkImageView targetImageView)
