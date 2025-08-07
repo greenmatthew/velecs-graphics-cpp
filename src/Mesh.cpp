@@ -101,26 +101,26 @@ std::vector<std::unique_ptr<Mesh>> Mesh::CreateAllFrom(const std::filesystem::pa
     return meshes;
 }
 
-void Mesh::UploadImmediately(
-    VkDevice device,
-    VmaAllocator allocator,
-    std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
-)
-{
-    vertexBuffer = AllocatedBuffer::CreateImmediately(
-        allocator,
-        vertices,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        immediateSubmit
-    );
+// void Mesh::UploadImmediately(
+//     VkDevice device,
+//     VmaAllocator allocator,
+//     std::function<void(std::function<void(VkCommandBuffer)>)> immediateSubmit
+// )
+// {
+//     vertexBuffer = AllocatedBuffer::CreateImmediately(
+//         allocator,
+//         vertices,
+//         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//         immediateSubmit
+//     );
 
-    indexBuffer = AllocatedBuffer::CreateImmediately(
-        allocator,
-        indices,
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        immediateSubmit
-    );
-}
+//     indexBuffer = AllocatedBuffer::CreateImmediately(
+//         allocator,
+//         indices,
+//         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+//         immediateSubmit
+//     );
+// }
 
 void Mesh::Upload(VkDevice device, VmaAllocator allocator)
 {
@@ -143,11 +143,11 @@ void Mesh::Draw(VkCommandBuffer cmd, VkPipelineLayout pipelineLayout)
     // }
 
     // Bind vertex buffer
-    VkDeviceSize offset = 0;
-    const VkBuffer vertexBuf = vertexBuffer->GetBuffer();
-    vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuf, &offset);
-    vkCmdBindIndexBuffer(cmd, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    // VkDeviceSize offset = 0;
+    // const VkBuffer vertexBuf = vertexBuffer->GetBuffer();
+    // vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuf, &offset);
+    // vkCmdBindIndexBuffer(cmd, indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+    // vkCmdDrawIndexed(cmd, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 }
 
 VkPipelineVertexInputStateCreateInfo Mesh::GetVertexInputInfo() const

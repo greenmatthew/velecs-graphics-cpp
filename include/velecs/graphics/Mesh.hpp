@@ -85,9 +85,9 @@ public:
     void SetIndices(const std::vector<uint32_t>& indices);
 
     /// @brief Sets index data and marks mesh as dirty (move version).
-    /// @param idx Vector of indices to move
+    /// @param indices Vector of indices to move
     /// @details Replaces existing index data efficiently. Call Upload() to sync with GPU.
-    void SetIndices(std::vector<uint32_t>&& idx);
+    void SetIndices(std::vector<uint32_t>&& indices);
 
     /// @brief Reserves space for vertices to avoid reallocations.
     /// @param count Number of vertices to reserve space for
@@ -132,6 +132,26 @@ public:
     /// @return True if mesh uses indexed rendering
     inline bool IsIndexed() const { return !indices.empty(); }
 
+    void NewUpload(const VkDevice device, const VmaAllocator allocator)
+    {
+        const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
+        const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
+
+        //create vertex buffer
+        vertexBuffer = AllocatedBuffer::TryCreateBuffer(allocator, vertexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY);
+
+        //find the adress of the vertex buffer
+        VkBufferDeviceAddressInfo deviceAddressInfo{};
+        deviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        deviceAddressInfo.buffer = vertexBuffer->buffer;
+        vertexBufferAddress = vkGetBufferDeviceAddress(device, &deviceAddressInfo);
+
+        //create index buffer
+        indexBuffer = AllocatedBuffer::TryCreateBuffer(allocator, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VMA_MEMORY_USAGE_GPU_ONLY);
+    }
+
     // MeshBase interface implementation
     void UploadImmediately(
         VkDevice device,
@@ -152,7 +172,7 @@ public:
     )
     {
         // Create the uniform buffer using VMA
-        _modelUniformsBuffer = AllocatedBuffer::CreateImmediately(
+        modelUniformsBuffer = AllocatedBuffer::CreateImmediately(
             allocator,
             &modelUniforms,
             sizeof(ModelUniforms),
@@ -193,7 +213,7 @@ public:
         
         // Update the descriptor set to point to our uniform buffer
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = _modelUniformsBuffer->GetBuffer();
+        bufferInfo.buffer = modelUniformsBuffer->GetBuffer();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(ModelUniforms);
         
@@ -237,11 +257,12 @@ protected:
     
     /// @brief GPU vertex buffer.
     std::unique_ptr<AllocatedBuffer> vertexBuffer{nullptr};
+    VkDeviceAddress vertexBufferAddress;
     
     /// @brief GPU index buffer.
     std::unique_ptr<AllocatedBuffer> indexBuffer{nullptr};
 
-    std::unique_ptr<AllocatedBuffer> _modelUniformsBuffer{nullptr};
+    std::unique_ptr<AllocatedBuffer> modelUniformsBuffer{nullptr};
     VkDescriptorSet _descriptorSet{VK_NULL_HANDLE};
 
     // Protected Methods
