@@ -1156,7 +1156,7 @@ void RenderEngine::DrawGeometry(const VkCommandBuffer cmd, Scene* const scene)
     scene->Query<MeshRenderer, Transform>([](auto entity, auto& renderer, auto& transform){
         if (renderer.mesh && renderer.mat)
         {
-            std::cout << entity.GetName() << std::endl;
+            std::cout << entity->GetName() << std::endl;
         }
     });
 

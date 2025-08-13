@@ -23,7 +23,7 @@ namespace velecs::graphics {
 
 const Camera::Mat4& Camera::GetViewMatrix() const
 {
-    auto& transform = GetOwner().GetTransform();
+    auto& transform = GetTransform();
     Mat4 currentWorldMatrix = transform.GetWorldMatrix();
 
     // Check if we need to recalculate (transform changed or manually marked dirty)
